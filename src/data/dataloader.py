@@ -23,7 +23,7 @@ class AudioNetDataset(Dataset):
             np.random.shuffle(self.data_paths)
             self.data_paths = self.data_paths[:subsample]
         self.gender_dict = {'female': 0, 'male':1}
-        with open(path + 'data/audioMNIST_meta.txt', 'r') as f:
+        with open(path + 'audioMNIST_meta.txt', 'r') as f:
             self.meta = eval(f.read())
         if preload:
             self.load_data()

@@ -81,8 +81,8 @@ def main(args):
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('--model_path', type = str, default = 'models', help='Path to save model')
-    parser.add_argument('--data_path', type = str, default = '/Users/theb/Desktop/data/AudioMNIST/', help='Path to AudioMNIST data')
-    parser.add_argument('--labeltype', type = str, default = 'digit', help='Label type to use')
+    parser.add_argument('--data_path', type = str, default = 'data/', help='Path to AudioMNIST data')
+    parser.add_argument('--labeltype', type = str, default = 'gender', help='Label type to use')
 
     args = parser.parse_args()
     main(args)

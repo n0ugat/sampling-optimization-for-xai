@@ -64,11 +64,11 @@ def main(args):
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
-    parser.add_argument('--data_path', type = str, default = '/Users/theb/Desktop/data/AudioMNIST/', help='Path to AudioMNIST data')
+    parser.add_argument('--data_path', type = str, default = 'data/', help='Path to AudioMNIST data')
     parser.add_argument('--model_path', type = str, default = 'models', help='Path to models folder')
 
     parser.add_argument('--dataset', type = str, default = 'AudioMNIST', help='Dataset to use')
-    parser.add_argument('--labeltype', type = str, default = 'digit', help='Type of label to use for AudioMNIST')
+    parser.add_argument('--labeltype', type = str, default = 'gender', help='Type of label to use for AudioMNIST')
     parser.add_argument('--noise_level', type = float, default = 0.01, help='Noise level for synthetic dataset. Either 0.8 or 0.01.')
     
     parser.add_argument('--explanation_domain', type = str, default = 'fft', help='Domain of explanation')

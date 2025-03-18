@@ -1,2 +1,2 @@
 # sampling-optimization-for-xai
-Optimizing Sampling Methods of Masking-Based XAI on Time-Series Data
+Optimizing Sampling Methods for Masking-Based XAI on Time-Series Data

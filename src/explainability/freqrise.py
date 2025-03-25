@@ -25,51 +25,91 @@ class FreqRISE(nn.Module):
 
         self.num_batches = num_batches
         self.use_softmax = use_softmax
-        self.encoder = encoder.eval().to(self.device)
+        self.encoder = encoder.eval().to(self.device) # function that evaluates the pretrained model on a given input
 
     def forward(self, input_data, mask_generator, **kwargs) -> None:
+        """
+        Compute the saliency map of the input data using FreqRISE.
+        Args:
+            input_data: torch.Tensor
+                The input data for which to compute the saliency map.
+            mask_generator: function
+                A function that generates masks for the input data.
+            **kwargs: dict
+                Additional keyword arguments to pass to the mask
+                generator function.
+        Returns:
+            torch.Tensor: The saliency map of the input data.
+        """
         i = 0 
         p = []
         input_data = input_data.unsqueeze(0).to(self.device)
         # cast data to domain of interest
         if self.domain == 'fft':
-            input_fft = tfft(input_data)
+            # Fast Fourier Transform (To frequency domain)
+            input_fft = tfft(input_data) 
         elif self.domain == 'stft':
-            input_fft = torch.stft(input_data.squeeze(), return_complex=True, **self.stft_params)
+            # Short Time Fourier Transform (To Time-frequency domain)
+            input_fft = torch.stft(input_data.squeeze(), return_complex=True, **self.stft_params) 
         else:
             input_fft = input_data
+            
         shape = input_fft.shape
         original_shape = input_fft.shape
 
         mask_type = torch.complex64 if self.domain in ['fft', 'stft'] else torch.float32
 
+        # generate masks
+        # num_batches * batch_size number of masks to generate, not number of inputs to process
         for _ in range(self.num_batches):
             for masks in mask_generator(self.batch_size, shape, self.device, dtype = mask_type, **kwargs):
-                if len(masks) == 2:
+                if len(masks) == 2: # mask_generator returns a tuple ????
                     x_mask, masks = masks
+                    # Shapes are ???
                 else:
+                    # apply mask
                     x_mask = input_fft*masks
+                    # cast back to original domain
                     if self.domain == 'fft':
-                        x_mask = tifft(x_mask, dim=-1)
+                        x_mask = tifft(x_mask, dim=-1) # Inverse Fast Fourier Transform (To time domain)
                     elif self.domain == 'stft':
-                        x_mask = torch.istft(x_mask, length = original_shape[-1], return_complex = False, **self.stft_params)
-                        x_mask = x_mask.reshape((self.batch_size, *original_shape))
-
-                with torch.no_grad():
+                        x_mask = torch.istft(x_mask, length = original_shape[-1], return_complex = False, **self.stft_params) # Inverse Short Time Fourier Transform (To time domain)
+                        x_mask = x_mask.reshape((self.batch_size, *original_shape)) # Reshape to original shape
+                # Shape is (batch_size, 1, 8000) for AudioNet
+                
+                with torch.no_grad(): 
+                    # get predictions of the model with the masked input
                     predictions = self.encoder(x_mask.float().to(self.device), only_feats = False).detach()
                 if self.device == 'mps':
                     predictions = predictions.cpu()
                 if self.use_softmax:
+                    # Why use softmax here?
                     predictions = torch.nn.functional.softmax(predictions, dim=1)
+                # compute saliency of the masked input
                 sal = torch.matmul(predictions.transpose(0,1).float(), masks.view(self.batch_size, -1).abs().float()).transpose(0,1).unsqueeze(0).cpu()
                 if self.domain == 'stft':
+                    # Shape is ???
                     sal = sal.view(1, *input_fft.shape, -1)
+                    # Shape is ???
                 p.append(sal)
                 i += 1
+        # average saliency maps ??? (is it average??)
         importance = torch.cat(p, dim=0).sum(dim=0)/(self.num_batches*self.batch_size)
-        return importance
+        return importance # Importance here is the saliency map
     
     def forward_dataloader(self, dataloader, num_cells, probability_of_drop):
+        """
+        Compute the saliency map of the input data using FreqRISE for a given dataloader.
+        Args:
+            dataloader: torch.utils.data.DataLoader
+                The dataloader containing the input data for which to compute the saliency map.
+            num_cells: int
+                The number of cells in the grid.
+            probability_of_drop: float
+                The probability of dropping a cell.
+        Returns:
+            list: The saliency maps of the input data. ??? (I don't know)
+        """
         freqrise_scores = []
         i = 0
         if self.domain == 'stft':

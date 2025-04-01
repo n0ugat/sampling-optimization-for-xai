@@ -14,7 +14,6 @@ def mask_generator(
     Generates a batch of masks by sampling Bernoulli random variables (probablity_of_drop) in a lower dimensional grid (num_cells)
     and upsamples the discrete masks using bilinear interpolation to obtain smooth continious mask in (0, 1).
     """
-    breakpoint()
     length = shape[-1] # Length of the input data
     pad_size = (num_cells // 2, num_cells // 2) * num_spatial_dims # Padding size for the grid, half of the number of cells. Why? (I think it's to center the grid)
     
@@ -55,5 +54,4 @@ def mask_generator(
                 shift_x[mask_i]:shift_x[mask_i] + shape[-1]
                 ]
         
-    breakpoint()
     yield masks

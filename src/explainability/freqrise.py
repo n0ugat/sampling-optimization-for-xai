@@ -60,7 +60,7 @@ class FreqRISE(nn.Module):
         mask_type = torch.complex64 if self.domain in ['fft', 'stft'] else torch.float32
 
         # generate masks
-        # num_batches * batch_size number of masks to generate, not number of inputs to process
+        # num_batches * batch_size = number of masks to generate, not number of inputs to process
         for _ in range(self.num_batches):
             for masks in mask_generator(self.batch_size, shape, self.device, dtype = mask_type, **kwargs):
                 if len(masks) == 2: # mask_generator returns a tuple ????
@@ -110,23 +110,33 @@ class FreqRISE(nn.Module):
         Returns:
             list: The saliency maps of the input data. ??? (I don't know)
         """
-        freqrise_scores = []
+        freqrise_scores = [] # List to store the saliency maps ??? (I don't know)
         i = 0
         if self.domain == 'stft':
             num_spatial_dims = 2
         else:
             num_spatial_dims = 1
-        for data, target in dataloader:
-            batch_scores = []
+            
+        for data, target in dataloader: # len(dataloader) = 1 ???
+            batch_scores = [] # List to store the saliency maps for the current batch ??? (I don't know)
             print("Computing batch", i+1, "/", len(dataloader))
             i+=1
             for sample, y in zip(data, target):
                 m_generator = mask_generator
+                # sample has shape (1, 1, 8000) for AudioNet
                 with torch.no_grad(): 
-                    importance = self.forward(sample.float().squeeze(0), mask_generator = m_generator, num_spatial_dims = num_spatial_dims, num_cells = num_cells, probablity_of_drop = probability_of_drop)
+                    importance = self.forward(sample.float().squeeze(0), 
+                                              mask_generator = m_generator, 
+                                              num_spatial_dims = num_spatial_dims, 
+                                              num_cells = num_cells, 
+                                              probablity_of_drop = probability_of_drop)
+                    
                 importance = importance.cpu().squeeze()[...,y]/probability_of_drop
                 # min max normalize
                 importance = (importance - importance.min()) / (importance.max() - importance.min())
+                # importance has shape (4001)
                 batch_scores.append(importance)
+            # batch_scores has shape (batch_size, 4001)
             freqrise_scores.append(torch.stack(batch_scores))
+        # freqrise_scores has shape (len(dataloader), batch_size, 4001)
         return freqrise_scores

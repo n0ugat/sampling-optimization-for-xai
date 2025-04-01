@@ -1,5 +1,14 @@
+.vscode/
+
 data/
+
+outputs/
+
 src/models/__pycache__/
 src/lrp/__pycache__/
 src/explainability/__pycache__/
 src/data/__pycache__/
+
+notebooks/bsc_xai.ipynb
+
+*.pkl

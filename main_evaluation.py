@@ -9,9 +9,12 @@ import numpy as np
 
 
 def main(args):
+    print('Loading data')
     test_loader = load_data(args)
+    print('Loading model')
     model = load_model(args)
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+    print(f'Using device: {device}')
     if args.dataset == 'synthetic':
         attributions_path = f'{args.output_path}/{args.dataset}_{args.noise_level}_attributions_{args.explanation_domain}_{args.n_samples}.pkl'
         output_path = f'{args.output_path}/{args.dataset}_{args.noise_level}_evaluation_{args.explanation_domain}_{args.n_samples}.pkl'
@@ -35,6 +38,7 @@ def main(args):
     if not 'deletion curves' in evaluation:
         evaluation['deletion curves'] = {}
     if args.compute_deletion_scores:
+        print('Computing deletion scores')
         lrp_stft_args = {'n_fft': args.lrp_window, 'hop_length': args.lrp_hop, 'center': False}
         freqrise_stft_params = {'n_fft': 455, 'hop_length': 455-420, 'window': torch.hann_window(455, periodic = False).to(device)}
         quantiles = np.arange(0, 1, 0.05)
@@ -55,10 +59,12 @@ def main(args):
             evaluation['deletion curves']['random'] = deletion_curves(model, test_loader, 'random', quantiles, domain=args.explanation_domain, stft_params=freqrise_stft_params, device = device)
             # get amplitude mask
             evaluation['deletion curves']['amplitude'] = deletion_curves(model, test_loader, 'amplitude', quantiles, domain=args.explanation_domain, stft_params=freqrise_stft_params, device = device)
+        print('Deletion scores computed')
     
     if not 'complexity scores' in evaluation:
         evaluation['complexity scores'] = {}
     if args.compute_complexity_scores:
+        print('Computing complexity scores')
         for key, value in attributions.items():
             if key in ['predictions', 'labels']:
                 continue
@@ -70,10 +76,12 @@ def main(args):
                 cutoff = None
                 only_pos = True
             evaluation['complexity scores'][key] = np.mean(complexity_scores(value, cutoff = cutoff, only_pos = only_pos))
+        print('Complexity scores computed')
 
     if not 'localization scores' in evaluation and args.dataset == 'synthetic':
         evaluation['localization scores'] = {}
     if args.compute_localization_scores and args.dataset == 'synthetic':
+        print('Computing localization scores')
         for key, value in attributions.items():
             if key in ['predictions', 'labels']:
                 continue
@@ -85,6 +93,7 @@ def main(args):
                 cutoff = None
                 only_pos = True
             evaluation['localization scores'][key] = np.mean(localization_scores(value, attributions['labels'], cutoff = cutoff, only_pos = only_pos))
+        print('Localization scores computed')
     
     with open(output_path, 'wb') as f:
         pickle.dump(evaluation, f)
@@ -93,6 +102,7 @@ def main(args):
 
 
 if __name__ == '__main__':
+    print("Running main_evaluation.py")
     parser = argparse.ArgumentParser()
     parser.add_argument('--model_path', type = str, default = 'models', help='Path to model')
     parser.add_argument('--data_path', type = str, default = 'data/', help='Path to AudioMNIST data')

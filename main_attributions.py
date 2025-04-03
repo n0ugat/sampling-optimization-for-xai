@@ -9,9 +9,12 @@ import os
 
 
 def main(args):
+    print('Loading data')
     test_loader = load_data(args)
+    print('Loading model')
     model = load_model(args)
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+    print(f'Using device: {device}')
     if args.dataset == 'synthetic':
         output_path = f'{args.output_path}/{args.dataset}_{args.noise_level}_attributions_{args.explanation_domain}_{args.n_samples}.pkl'
     elif args.dataset == 'AudioMNIST':
@@ -28,20 +31,29 @@ def main(args):
     lrp_stft_args = {'n_fft': args.lrp_window, 'hop_length': args.lrp_hop, 'center': False}
     if not 'saliency' in attributions:
         # compute saliency
+        print('Computing saliency')
         attributions['saliency'] = compute_gradient_scores(model, test_loader, attr_method = 'gxi', domain = args.explanation_domain, stft_params = lrp_stft_args)
+        print('Saliency computed')
     if not 'lrp' in attributions:
         # compute LRP
+        print('Computing LRP')
         attributions['lrp'] = compute_gradient_scores(model, test_loader, attr_method = 'lrp', domain = args.explanation_domain, stft_params = lrp_stft_args)
+        print('LRP computed')
     if not 'IG' in attributions:
         # compute integrated gradients
+        print('Computing IG')
         attributions['IG'] = compute_gradient_scores(model, test_loader, attr_method = 'ig', domain = args.explanation_domain, stft_params = lrp_stft_args)
+        print('IG computed')
     model.to(device)
 
     freqrise_stft_params = {'n_fft': 455, 'hop_length': 455-420, 'window': torch.hann_window(455, periodic = False).to(device)}
     if not f'freqrise_{args.num_cells}_{args.freqrise_samples}_dropprob_{args.probability_of_drop}' in attributions:
         # compute FreqRISE
+        print('Creating FreqRISE')
         freqrise = FreqRISE(model, batch_size=500, num_batches=args.freqrise_samples//500, device=device, domain=args.explanation_domain, stft_params=freqrise_stft_params, use_softmax=False)
+        print('Computing FreqRISE')
         attributions[f'freqrise_{args.num_cells}_{args.freqrise_samples}_dropprob_{args.probability_of_drop}'] = freqrise.forward_dataloader(test_loader, args.num_cells, args.probability_of_drop)
+        print('FreqRISE computed')
 
     if not 'predictions' in attributions:
         # get predictions and labels
@@ -63,6 +75,7 @@ def main(args):
 
 
 if __name__ == '__main__':
+    print("Running main_attributions.py")
     parser = argparse.ArgumentParser()
     parser.add_argument('--data_path', type = str, default = 'data/', help='Path to AudioMNIST data')
     parser.add_argument('--model_path', type = str, default = 'models', help='Path to models folder')

@@ -146,7 +146,7 @@ class FreqRISE(nn.Module):
                 # with open(f'outputs/signal_digit_{j}.pkl', 'wb') as f:
                 #     pickle.dump(pickle_output, f)
                 # # importance of one input sample has shape (4001)
-                # batch_scores.append(importance)
+                batch_scores.append(importance)
                 # j+=1
             # batch_scores has shape (batch_size, 4001)
             freqrise_scores.append(torch.stack(batch_scores))

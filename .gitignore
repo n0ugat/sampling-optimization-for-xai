@@ -1,5 +1,7 @@
 data/
-outputs/
+outputs/signals/
+outputs/figures/
+outputs/hpclogs/
 notebooks/
 
 submit.sh

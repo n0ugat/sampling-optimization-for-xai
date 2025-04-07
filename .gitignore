@@ -1,8 +1,12 @@
 .vscode/
 
 data/
+outputs/signals/
+outputs/figures/
+outputs/hpclogs/
+notebooks/
 
-outputs/
+submit.sh
 
 src/models/__pycache__/
 src/lrp/__pycache__/
@@ -13,3 +17,4 @@ notebooks/bsc_xai.ipynb
 
 *.pkl
 *.wav
+

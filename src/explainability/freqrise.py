@@ -7,6 +7,20 @@ from src.explainability.masking import mask_generator
 from scipy.io import wavfile
 import numpy as np
 
+# import pickle
+
+def plot(importances, sample_idx, digit: bool = False, identifier: str = ''):
+    import matplotlib.pyplot as plt
+    fig, ax = plt.subplots(figsize=(10, 5))
+    ax.plot(importances, marker='o')
+    ax.set_title('Importances Plot')
+    ax.set_xlabel('frequency (Hz)')
+    ax.set_ylabel('Importance Value')
+    ax.grid()
+    plt.tight_layout()
+    plt.savefig(f'outputs/importances_plot_{"digit_" if digit else ""}{sample_idx}_{identifier}.png')
+    plt.close()
+
 class FreqRISE(nn.Module):
     def __init__(self,
                  encoder: nn.Module,
@@ -50,16 +64,12 @@ class FreqRISE(nn.Module):
         if self.domain == 'fft':
             # Fast Fourier Transform (To frequency domain)
             input_fft = tfft(input_data) 
-        elif self.domain == 'stft':
-            # Short Time Fourier Transform (To Time-frequency domain)
-            input_fft = torch.stft(input_data.squeeze(), return_complex=True, **self.stft_params) 
         else:
             input_fft = input_data
             
         shape = input_fft.shape
-        original_shape = input_fft.shape
 
-        mask_type = torch.complex64 if self.domain in ['fft', 'stft'] else torch.float32
+        mask_type = torch.complex64 if self.domain == 'fft' else torch.float32
 
         # generate masks
         # num_batches * batch_size = number of masks to generate, not number of inputs to process
@@ -74,9 +84,6 @@ class FreqRISE(nn.Module):
                     # cast back to original domain
                     if self.domain == 'fft':
                         x_mask = tifft(x_mask, dim=-1) # Inverse Fast Fourier Transform (To time domain)
-                    elif self.domain == 'stft':
-                        x_mask = torch.istft(x_mask, length = original_shape[-1], return_complex = False, **self.stft_params) # Inverse Short Time Fourier Transform (To time domain)
-                        x_mask = x_mask.reshape((self.batch_size, *original_shape)) # Reshape to original shape
                 # Shape is (batch_size, 1, 8000) for AudioNet
                 
                 with torch.no_grad(): 
@@ -89,13 +96,9 @@ class FreqRISE(nn.Module):
                     predictions = torch.nn.functional.softmax(predictions, dim=1)
                 # compute saliency of the masked input
                 sal = torch.matmul(predictions.transpose(0,1).float(), masks.view(self.batch_size, -1).abs().float()).transpose(0,1).unsqueeze(0).cpu()
-                if self.domain == 'stft':
-                    # Shape is ???
-                    sal = sal.view(1, *input_fft.shape, -1)
-                    # Shape is ???
+                # sal has shape (1, 4001, 2)
                 p.append(sal)
                 i += 1
-        # average saliency maps ??? (is it average??)
         importance = torch.cat(p, dim=0).sum(dim=0)/(self.num_batches*self.batch_size)
         return importance # Importance here is the saliency map
     
@@ -114,15 +117,12 @@ class FreqRISE(nn.Module):
         """
         freqrise_scores = [] # List to store the saliency maps ??? (I don't know)
         i = 0
-        if self.domain == 'stft':
-            num_spatial_dims = 2
-        else:
-            num_spatial_dims = 1
             
         for data, target in dataloader: # len(dataloader) = 1 ???
             batch_scores = [] # List to store the saliency maps for the current batch ??? (I don't know)
             print("Computing batch", i+1, "/", len(dataloader))
             i+=1
+            # j=0
             for sample, y in zip(data, target):
                 m_generator = mask_generator
                 # sample has shape (1, 1, 8000) for AudioNet
@@ -138,15 +138,27 @@ class FreqRISE(nn.Module):
                 with torch.no_grad(): 
                     importance = self.forward(sample.float().squeeze(0), 
                                               mask_generator = m_generator, 
-                                              num_spatial_dims = num_spatial_dims, 
                                               num_cells = num_cells, 
                                               probablity_of_drop = probability_of_drop)
-                    
+                
+                # Selects the importance values for the given class y
                 importance = importance.cpu().squeeze()[...,y]/probability_of_drop
                 # min max normalize
+                # breakpoint() # Step 1
                 importance = (importance - importance.min()) / (importance.max() - importance.min())
-                # importance has shape (4001)
+                # breakpoint() # Step 2
+                # pickle_output = {
+                #     'time_signal': sample.float().squeeze(0).squeeze(0).cpu(),
+                #     'freq_signal': tfft(sample.float().squeeze(0).squeeze(0).cpu().unsqueeze(0).to(self.device)).squeeze(0).cpu(),
+                #     'importance': importance.squeeze(0).cpu(),
+                #     'target': y.cpu(),
+                # }
+                # # Save the output to a pickle file
+                # with open(f'outputs/signal_digit_{j}.pkl', 'wb') as f:
+                #     pickle.dump(pickle_output, f)
+                # # importance of one input sample has shape (4001)
                 batch_scores.append(importance)
+                # j+=1
             # batch_scores has shape (batch_size, 4001)
             freqrise_scores.append(torch.stack(batch_scores))
         # freqrise_scores has shape (len(dataloader), batch_size, 4001)

@@ -12,3 +12,4 @@ src/data/__pycache__/
 notebooks/bsc_xai.ipynb
 
 *.pkl
+*.wav

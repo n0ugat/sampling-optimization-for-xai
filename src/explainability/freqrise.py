@@ -4,6 +4,8 @@ from torch.fft import irfft as tifft
 import torch
 import torch.nn as nn
 from src.explainability.masking import mask_generator
+from scipy.io import wavfile
+import numpy as np
 
 class FreqRISE(nn.Module):
     def __init__(self,
@@ -124,6 +126,15 @@ class FreqRISE(nn.Module):
             for sample, y in zip(data, target):
                 m_generator = mask_generator
                 # sample has shape (1, 1, 8000) for AudioNet
+
+                # Save sample as wav file
+                print("Saving sample as wav file")
+                sample = sample.squeeze(0).squeeze(0).cpu().numpy()
+                sample = np.int16(sample * 32767)
+                wavfile.write(f"sample_{sample}.wav", 8000, sample)
+                sample = torch.from_numpy(sample).float().to(self.device)
+                sample = sample.unsqueeze(0).to(self.device)
+
                 with torch.no_grad(): 
                     importance = self.forward(sample.float().squeeze(0), 
                                               mask_generator = m_generator, 

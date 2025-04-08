@@ -96,6 +96,8 @@ class FreqRISE_Reinforce(nn.Module):
         with torch.no_grad(): 
             # get predictions of the model with the original input
             pred_original = self.encoder(input_data.unsqueeze(0).float().to(self.device), only_feats = False).detach().squeeze()
+            if self.use_softmax:
+                pred_original = torch.softmax(pred_original, dim=-1)
         
         random_indices = torch.randint(0, 200, (4,))
         params_saved = []
@@ -110,6 +112,8 @@ class FreqRISE_Reinforce(nn.Module):
             with torch.no_grad():
                 # Get the model prediction for the masked input
                 predictions = self.encoder(x_masks.float(), only_feats = False).detach()
+                if self.use_softmax:
+                    predictions = torch.softmax(predictions, dim=-1)
             rewards = []
             for mask, pred_masked in zip(masks, predictions):
                 sal = torch.matmul(pred_masked.unsqueeze(0).transpose(0,1).float(), mask.abs().float()).transpose(0,1).unsqueeze(0)

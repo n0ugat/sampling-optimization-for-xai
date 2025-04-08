@@ -4,7 +4,7 @@ data/
 outputs/signals/
 outputs/figures/
 outputs/hpclogs/
-notebooks/
+notebooks/samples/
 
 submit.sh
 
@@ -12,6 +12,7 @@ src/models/__pycache__/
 src/lrp/__pycache__/
 src/explainability/__pycache__/
 src/data/__pycache__/
+src/plotting/__pycache__/
 
 notebooks/bsc_xai.ipynb
 

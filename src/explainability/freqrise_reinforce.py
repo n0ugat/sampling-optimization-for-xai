@@ -6,6 +6,7 @@ import torch.nn as nn
 from src.explainability.masking_reinforce import MaskPolicy
 import pickle
 import os
+import time
 
 class FreqRISE_Reinforce(nn.Module):
     def __init__(self,
@@ -89,6 +90,8 @@ class FreqRISE_Reinforce(nn.Module):
             
         mask_type = torch.complex64 if self.domain == 'fft' else torch.float32
         
+        start_time = time.time()
+        
         m_policy = MaskPolicy(batch_size=self.batch_size, shape=shape, num_cells = num_cells, device = self.device, dtype=mask_type).to(self.device)
         optimizer = torch.optim.Adam(m_policy.parameters(), lr=self.lr)
         baseline = 0.0
@@ -99,7 +102,7 @@ class FreqRISE_Reinforce(nn.Module):
             if self.use_softmax:
                 pred_original = torch.softmax(pred_original, dim=-1)
         
-        random_indices = torch.randint(0, 200, (4,))
+        random_indices = torch.randint(0, num_cells, (4,))
         params_saved = []
         losses = []
         reward_list = []
@@ -137,17 +140,20 @@ class FreqRISE_Reinforce(nn.Module):
             #     print(f"Iteration {i}, Loss: {loss.item()}, Reward: {reward.item()}, Baseline: {baseline}")
         importance = torch.cat(p, dim=0).sum(dim=0)/(self.num_batches*self.batch_size)
         # Selects the importance values for the given class y
-        importance_ = importance.cpu().squeeze()[...,target_class]#/probability_of_drop
+        importance = importance.cpu().squeeze()[...,target_class]#/probability_of_drop
         # min max normalize
-        importance_ = (importance_ - importance_.min()) / (importance_.max() - importance_.min())
+        importance = (importance - importance.min()) / (importance.max() - importance.min())
+        run_time = time.time() - start_time
         output_dict = {
             'signal': input_data.squeeze(),
             'signal_fft' : input_fft.squeeze(),
+            'signal_fft_re' : torch.abs(input_fft).squeeze(),
             'target_class': target_class,
-            'importance': importance_,
+            'importance': importance,
             'logged_params': params_saved,
             'loss' : losses,
-            'rewards' : reward_list
+            'rewards' : reward_list,
+            'run_time' : run_time,
         }
         os.makedirs(f'notebooks/samples/freqrise_sm_{self.use_softmax}_batchsize_{self.batch_size}_numbatches_{self.num_batches}_R_{self.reward_fn}_lr_{self.lr}_alpha_{self.alpha}_beta_{self.beta}_decay_{self.decay}_numcells_{num_cells}', exist_ok=True)
         with open(f'notebooks/samples/freqrise_sm_{self.use_softmax}_batchsize_{self.batch_size}_numbatches_{self.num_batches}_R_{self.reward_fn}_lr_{self.lr}_alpha_{self.alpha}_beta_{self.beta}_decay_{self.decay}_numcells_{num_cells}/sample_idx_{idx}.pkl', mode='wb') as f:
@@ -182,9 +188,9 @@ class FreqRISE_Reinforce(nn.Module):
                                             num_cells = num_cells,
                                             idx=j*i+j)
                 # Selects the importance values for the given class y
-                importance = importance.cpu().squeeze()[...,y]#/probability_of_drop
+                # importance = importance.cpu().squeeze()[...,y]#/probability_of_drop
                 # min max normalize
-                importance = (importance - importance.min()) / (importance.max() - importance.min())
+                # importance = (importance - importance.min()) / (importance.max() - importance.min())
                 # # importance of one input sample has shape (4001)
                 batch_scores.append(importance)
                 j+=1

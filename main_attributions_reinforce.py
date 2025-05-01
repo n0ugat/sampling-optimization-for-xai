@@ -50,7 +50,7 @@ def main(args):
     if not freqrise_file_output in attributions:
         # compute FreqRISE
         print('Creating FreqRISE')
-        freqrise = FreqRISE_Reinforce(model, batch_size=args.batch_size, num_batches=num_batches_freqrise, device=device, domain=args.explanation_domain, use_softmax=False, lr=args.lr, alpha=args.alpha, beta=args.beta, decay=args.decay, reward_fn=args.reward_fn)
+        freqrise = FreqRISE_Reinforce(model, batch_size=args.batch_size, num_batches=num_batches_freqrise, device=device, domain=args.explanation_domain, use_softmax=args.use_softmax, lr=args.lr, alpha=args.alpha, beta=args.beta, decay=args.decay, reward_fn=args.reward_fn)
         print('Computing FreqRISE')
         attributions[freqrise_file_output] = freqrise.forward_dataloader(test_loader, args.num_cells)
         print('FreqRISE computed')
@@ -96,10 +96,12 @@ if __name__ == '__main__':
     parser.add_argument('--beta', type = float, default = 0.01, help='Weight of mask size towards loss for reinforce algorithm')
     parser.add_argument('--decay', type = float, default = 0.9, help='weight of baseline towards loss for reinforce algorithm')
     parser.add_argument('--reward_fn', type = str, default = "pred", help='reward function to maximize for reinforce algorithm')
-    parser.add_argument('--use_softmax', type = bool, default = False, help='use softmax for FreqRISE')
+    parser.add_argument('--use_softmax', type = str, default = "False", help='use softmax for FreqRISE')
     parser.add_argument('--batch_size', type = int, default = 10, help='Batch size for FreqRISE')
     
-
     parser.add_argument('--output_path', type = str, default = 'outputs', help='Path to save output')
     args = parser.parse_args()
+    print("Use_Softmax: ", args.use_softmax)
+    args.use_softmax = args.use_softmax == 'True'
+    print("Bool(Use_Softmax): ", args.use_softmax)
     main(args)

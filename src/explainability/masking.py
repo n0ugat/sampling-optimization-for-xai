@@ -6,7 +6,7 @@ def mask_generator(
     shape: tuple, # Shape of the input data (Not sure yet, so double check)
     device: str, # Device to use
     num_cells: int = 50, # Number of cells in the grid (Points to interpolate from)
-    probablity_of_drop: float = 0.5, # Probability of dropping a cell
+    probability_of_drop: float = 0.5, # Probability of dropping a cell
     dtype = torch.float32, # Data type of the mask
     interpolation = 'linear'): # Interpolation method, 'nearest' or 'linear' (Removed 'nearest' implementation, as it could never run in the code)
     """
@@ -17,7 +17,7 @@ def mask_generator(
     pad_size = (num_cells // 2, num_cells // 2) # Padding size for the grid, half of the number of cells. Why? (I think it's to center the grid)
     
     # Generate a grid of Bernoulli random variables
-    grid = (torch.rand(batch_size, 1, *((num_cells,))) < probablity_of_drop).float()
+    grid = (torch.rand(batch_size, 1, *((num_cells,))) < probability_of_drop).float()
     # Shape: (batch_size, 1, num_cells) (Not sure yet, so double check)
     
     # Upsample the grid using (bi)linear interpolation
@@ -44,5 +44,4 @@ def mask_generator(
             :,
             shift_x[mask_i]:shift_x[mask_i] + length # 
             ]
-        
     yield masks

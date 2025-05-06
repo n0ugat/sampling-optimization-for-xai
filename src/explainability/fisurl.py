@@ -22,8 +22,9 @@ class FiSURL(nn.Module): # FiSURL: Filterbank Sampling Using Reinforcement Learn
                 num_batches: int = 300,
                 device: str = 'cpu',
                 use_softmax = False,
-                use_rl: bool = False,
-                rl_params: dict = {'lr': 1e-4, 'alpha': 1.00, 'beta': 0.01, 'decay': 0.9, 'reward_fn': 'pred'},
+                use_rl: bool = True,
+                # rl_params: dict = {'lr': 1e-4, 'alpha': 1.00, 'beta': 0.01, 'decay': 0.9, 'reward_fn': 'pred'},
+                rl_params: dict = {'lr': 0.05, 'alpha': 1.00, 'beta': 0.05, 'decay': 0.9, 'reward_fn': 'pred'}
                 ):
 
         super().__init__()
@@ -33,7 +34,7 @@ class FiSURL(nn.Module): # FiSURL: Filterbank Sampling Using Reinforcement Learn
         self.num_banks = num_banks
         self.fs = fs
         self.bandwidth = bandwidth
-        self.filter_bank = FilterBank(num_banks, fs, num_taps, bandwidth)
+        self.filter_bank = FilterBank(self.num_banks, self.fs, self.num_taps, self.bandwidth)
 
         # Initialize mask generator parameters
         self.batch_size = batch_size
@@ -90,12 +91,12 @@ class FiSURL(nn.Module): # FiSURL: Filterbank Sampling Using Reinforcement Learn
             baseline = 0.0
 
             with torch.no_grad(): 
-                # get predictions of the model with the original input
+                # Get predictions of the model with the original input
                 pred_original = self.encoder(input_data.unsqueeze(0).float().to(self.device), only_feats = False).detach().squeeze()
                 if self.use_softmax:
                     pred_original = torch.softmax(pred_original, dim=-1)
 
-            random_indices = torch.randint(0, self.num_banks, (4,))
+            random_indices = torch.randint(0, self.num_banks, (4,)) # Randomly select 4 parameters to save
             params_saved = []
             losses = []
             reward_list = []
@@ -105,19 +106,18 @@ class FiSURL(nn.Module): # FiSURL: Filterbank Sampling Using Reinforcement Learn
         for _ in range(self.num_batches):
             if self.use_rl:
                 # Use RL mask generator
-                # breakpoint()
                 masks, log_probs = m_policy()
                 masks = masks.to(self.device)
-                # breakpoint()
                 x_masked = self.filter_bank.forward(input_data, mask=masks) # Apply the mask to the input data
+
                 with torch.no_grad():
                     predictions = self.encoder(x_masked.float().to(self.device), only_feats = False).detach()
                     if self.use_softmax:
                         predictions = torch.softmax(predictions, dim=1)
+
                 rewards = []
-                # breakpoint()
+
                 for mask, pred_masked in zip(masks, predictions):
-                    # breakpoint()
                     # sal = torch.matmul(pred_masked.unsqueeze(0).transpose(0,1).float(), mask.abs().float()).transpose(0,1).unsqueeze(0)
                     sal = torch.matmul(predictions.transpose(0,1).float(), masks.view(self.batch_size, -1).abs().float()).transpose(0,1).unsqueeze(0).cpu() # Compute saliency
                     saliencies.append(sal)
@@ -127,8 +127,8 @@ class FiSURL(nn.Module): # FiSURL: Filterbank Sampling Using Reinforcement Learn
                         reward = self.reward_fn_saliency(sal, mask) # Compute the reward using the saliency and the masks
                     else:
                         raise ValueError("Invalid reward function")
-                    # breakpoint()
                     rewards.append(reward) # Append the reward to the list
+
                 rewards = torch.stack(rewards).to(self.device)
                 mean_reward = rewards.mean()
 
@@ -142,35 +142,27 @@ class FiSURL(nn.Module): # FiSURL: Filterbank Sampling Using Reinforcement Learn
                 params_saved.append(m_policy.logits[random_indices].tolist())
                 losses.append(loss.item())
                 reward_list.append(reward.item())
-                # breakpoint()
 
             else:
                 # Generate a batch of masks
                 for masks in mask_generator(self.batch_size, shape, **kwargs):
                     masks = masks.to(self.device)
-                    # print("Masks generated")
                     x_masked = self.filter_bank.forward(input_data, mask=masks) # Apply the mask to the input data
-                    # print("Masks applied")
+
                     with torch.no_grad():
                         predictions = self.encoder(x_masked.float().to(self.device), only_feats = False).detach() # Pass the masked input through the encoder
                         if self.use_softmax:
                             predictions = torch.softmax(predictions, dim=1)
-                    # print("Predictions computed")
+
                     # sal = torch.abs(predictions - self.encoder(input_data.float().to(self.device), only_feats = False).detach())
                     sal = torch.matmul(predictions.transpose(0,1).float(), masks.view(self.batch_size, -1).abs().float()).transpose(0,1).unsqueeze(0).cpu() # Compute saliency
-                    # sal = torch.matmul(predictions, masks).abs().float().unsqueeze(0).cpu()
-                    # sal = torch.matmul(predictions.transpose(0,1).float(), x_masked.view(self.batch_size, -1).abs().float()).transpose(0,1).unsqueeze(0).cpu()
                     saliencies.append(sal)
-        # print("All saliencies for current sample computed")
-
-        # breakpoint()
 
         importance = torch.cat(saliencies, dim=0).sum(dim=0)/(self.num_batches*self.batch_size)
 
         if self.use_rl:
             # Selects the importance values for the given class y
             importance_ = importance.cpu().squeeze()[...,target_class] # /kwargs.get('probability_of_drop')
-            # importance = importance.cpu().squeeze()/probability_of_drop
             importance_ = (importance_ - importance_.min()) / (importance_.max() - importance_.min()) # min max normalize
             run_time = time.time() - start_time
             output_dict = {
@@ -200,9 +192,8 @@ class FiSURL(nn.Module): # FiSURL: Filterbank Sampling Using Reinforcement Learn
         for data, target in dataloader:
             batch_scores = []
             print("Computing batch", i+1, "/", len(dataloader))
-            
-            # print("Data shape:", data.shape)
             j = 0
+
             for sample, y in tqdm(zip(data, target), desc="Computing samples", total=data.shape[0]):
             # for sample, y in zip(data, target):
                 # print("Computing sample", sample_count+1, "/", data.shape[0])
@@ -216,10 +207,8 @@ class FiSURL(nn.Module): # FiSURL: Filterbank Sampling Using Reinforcement Learn
                                           idx=j*i+j
                                           )
 
-                # breakpoint()
                 # Selects the importance values for the given class y
                 importance = importance.cpu().squeeze()[...,y]/probability_of_drop
-                # importance = importance.cpu().squeeze()/probability_of_drop
                 importance = (importance - importance.min()) / (importance.max() - importance.min()) # min max normalize
                 batch_scores.append(importance)
                 j += 1

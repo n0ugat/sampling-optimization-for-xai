@@ -118,7 +118,7 @@ class FreqRISE(nn.Module):
         freqrise_scores = [] # List to store the saliency maps ??? (I don't know)
         i = 0
             
-        for data, target in dataloader: # len(dataloader) = 1 ???
+        for data, target in dataloader:
             batch_scores = [] # List to store the saliency maps for the current batch ??? (I don't know)
             print("Computing batch", i+1, "/", len(dataloader))
             i+=1
@@ -126,14 +126,6 @@ class FreqRISE(nn.Module):
             for sample, y in zip(data, target):
                 m_generator = mask_generator
                 # sample has shape (1, 1, 8000) for AudioNet
-
-                # Save sample as wav file
-                print("Saving sample as wav file")
-                sample = sample.squeeze(0).squeeze(0).cpu().numpy()
-                sample = np.int16(sample * 32767)
-                wavfile.write(f"sample_{sample}.wav", 8000, sample)
-                sample = torch.from_numpy(sample).float().to(self.device)
-                sample = sample.unsqueeze(0).to(self.device)
 
                 with torch.no_grad(): 
                     importance = self.forward(sample.float().squeeze(0), 

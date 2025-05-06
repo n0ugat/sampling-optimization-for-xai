@@ -109,7 +109,7 @@ if __name__ == '__main__':
 
     parser.add_argument('--dataset', type = str, default = 'AudioMNIST', help='Dataset to use')
     parser.add_argument('--labeltype', type = str, default = 'gender', help='Type of label to use for AudioMNIST')
-    parser.add_argument('--noise_level', type = int, default = 0.01, help='Noise level for synthetic data')
+    parser.add_argument('--noise_level', type = int, default = 0.5, help='Noise level for synthetic data')
     
     parser.add_argument('--freqrise_cutoff', type = eval, default = None, help='Cutoff percent for FreqRISE during evaluation')
     

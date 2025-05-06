@@ -82,7 +82,7 @@ if __name__ == '__main__':
 
     parser.add_argument('--dataset', type = str, default = 'AudioMNIST', help='Dataset to use')
     parser.add_argument('--labeltype', type = str, default = 'digit', help='Type of label to use for AudioMNIST')
-    parser.add_argument('--noise_level', type = float, default = 0.01, help='Noise level for synthetic dataset. Either 0.8 or 0.01.')
+    parser.add_argument('--noise_level', type = float, default = 0.5, help='Noise level for synthetic dataset. Either 0.8 or 0.01.')
     
     parser.add_argument('--explanation_domain', type = str, default = 'fft', help='Domain of explanation')
     parser.add_argument('--num_cells', type = int, default = 200, help='Number of cells in mask')

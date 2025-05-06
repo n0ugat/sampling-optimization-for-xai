@@ -1,6 +1,39 @@
 import numpy as np
 from itertools import chain, combinations
 
+
+def synthetic_dataset_generator(n_samples=1000, length=400, noiselevel=0.1, seed=42):
+    """
+    Generates a synthetic dataset of sine waves with added noise.
+    
+    Parameters:
+    n_samples (int): Number of samples to generate.
+    length (int): Length of each sample.
+    noiselevel (float): Standard deviation of the Gaussian noise to be added.
+    seed (int): Random seed for reproducibility.
+    
+    Returns:
+    data (numpy.ndarray): Generated dataset of shape (n_samples, length).
+    labels (list): List of labels corresponding to each sample.
+    """
+    np.random.seed(seed)
+    data = np.zeros((n_samples, length))
+    labels = []
+    
+    for i in range(n_samples):
+        frequency_classes = [50, 100, 150] # Frequencies for the classes
+        class_ = np.random.choice(np.uint8([0,1,2,3,4,5,6,7]), ) # One for each possible combination of frequencies
+        data[i] += np.random.normal(0, noiselevel, length) # Add Gaussian noise with noiselevel as standard deviation
+        for freq_idx in range(len(frequency_classes)):
+            if class_ & (1 << freq_idx): # Check if the frequency is in the class, using bitwise AND
+                freq = frequency_classes[freq_idx]
+                data[i] += np.sin(2 * np.pi * freq / length * np.arange(length) + np.random.uniform(0, 2 * np.pi)) # Add sine wave with specified frequency and a random phase
+        labels.append([class_])
+    
+    return data, labels
+
+
+
 def powerset(iterable):
     s = list(iterable)  # Convert the input iterable to a list.
     return list(chain.from_iterable(combinations(s, r) for r in range(len(s) + 1)))
@@ -42,3 +75,13 @@ def frequency_lrp_dataset(samples, length =  2560, noiselevel = 0.01, M_min=None
     if return_ks:
         return data, labels, ks
     return data, labels
+
+
+if __name__ == "__main__":
+    import pickle
+    data, labels = synthetic_dataset_generator(n_samples=10, length=400, noiselevel=0.5, seed=42)
+    print(data.shape)
+    print(labels)
+    
+    with open('notebooks/samples/synthetic_test_dataset.pkl', 'wb') as f:
+        pickle.dump({"signals":data, "labels":labels}, f)

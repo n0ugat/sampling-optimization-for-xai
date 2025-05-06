@@ -43,7 +43,7 @@ class FreqRISE(nn.Module):
         self.use_softmax = use_softmax
         self.encoder = encoder.eval().to(self.device) # function that evaluates the pretrained model on a given input
 
-    def forward(self, input_data, mask_generator, **kwargs) -> None:
+    def forward(self, input_data, mask_generator, **kwargs):
         """
         Compute the saliency map of the input data using FreqRISE.
         Args:
@@ -75,6 +75,7 @@ class FreqRISE(nn.Module):
         # num_batches * batch_size = number of masks to generate, not number of inputs to process
         for _ in range(self.num_batches):
             for masks in mask_generator(self.batch_size, shape, self.device, dtype = mask_type, **kwargs):
+            # for masks in mask_generator(self.batch_size, **kwargs):
                 if len(masks) == 2: # mask_generator returns a tuple ????
                     x_mask, masks = masks
                     # Shapes are ???
@@ -131,7 +132,8 @@ class FreqRISE(nn.Module):
                     importance = self.forward(sample.float().squeeze(0), 
                                               mask_generator = m_generator, 
                                               num_cells = num_cells, 
-                                              probablity_of_drop = probability_of_drop)
+                                            #   num_banks = num_cells,
+                                              probability_of_drop = probability_of_drop)
                 
                 # Selects the importance values for the given class y
                 importance = importance.cpu().squeeze()[...,y]/probability_of_drop

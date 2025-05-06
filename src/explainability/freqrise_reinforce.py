@@ -87,9 +87,7 @@ class FreqRISE_Reinforce(nn.Module):
             input_fft = input_data
             
         shape = input_fft.shape
-            
         mask_type = torch.complex64 if self.domain == 'fft' else torch.float32
-        
         start_time = time.time()
         
         m_policy = MaskPolicy(batch_size=self.batch_size, shape=shape, num_cells = num_cells, device = self.device, dtype=mask_type).to(self.device)
@@ -112,12 +110,15 @@ class FreqRISE_Reinforce(nn.Module):
             x_masks = input_fft*masks
             if self.domain == 'fft':
                 x_masks = tifft(x_masks, dim=-1)
+
             with torch.no_grad():
                 # Get the model prediction for the masked input
                 predictions = self.encoder(x_masks.float(), only_feats = False).detach()
                 if self.use_softmax:
                     predictions = torch.softmax(predictions, dim=-1)
+
             rewards = []
+
             for mask, pred_masked in zip(masks, predictions):
                 sal = torch.matmul(pred_masked.unsqueeze(0).transpose(0,1).float(), mask.abs().float()).transpose(0,1).unsqueeze(0)
                 p.append(sal)
@@ -126,13 +127,16 @@ class FreqRISE_Reinforce(nn.Module):
                 elif self.reward_fn == "saliency":
                     reward = self.reward_fn_saliency(sal, mask) # Compute the reward using the saliency and the masks
                 rewards.append(reward)
+
             rewards = torch.stack(rewards).to(self.device)
             mean_reward = rewards.mean()
             baseline = self.decay * baseline + (1 - self.decay) * mean_reward # Update the baseline
             loss = -((rewards - baseline) * log_probs).mean() # Reinforce loss, negative because we want to maximize the expected reward
+
             optimizer.zero_grad() # Zero the gradients  
             loss.backward() # Backpropagation
             optimizer.step() # Update the policy network
+
             params_saved.append(m_policy.logits[random_indices].tolist())
             losses.append(loss.item())
             reward_list.append(reward.item())

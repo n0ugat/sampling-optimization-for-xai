@@ -153,6 +153,7 @@ class FreqRISE_Reinforce(nn.Module):
             'signal_fft' : input_fft.squeeze(),
             'signal_fft_re' : torch.abs(input_fft).squeeze(),
             'target_class': target_class,
+            'prediction' : torch.argmax(pred_original),
             'importance': importance,
             'logged_params': params_saved,
             'loss' : losses,

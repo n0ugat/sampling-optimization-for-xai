@@ -20,7 +20,8 @@ class FreqRISE_Reinforce(nn.Module):
                  alpha=1.00,
                  beta=0.01,
                  decay=0.9,
-                 reward_fn = "pred"
+                 reward_fn = "pred",
+                 dataset = "AudioMNIST"
                  ):
 
         super().__init__()
@@ -33,6 +34,7 @@ class FreqRISE_Reinforce(nn.Module):
         self.beta=beta
         self.decay=decay
         self.reward_fn = reward_fn
+        self.dataset = dataset
 
         self.num_batches = num_batches
         self.num_masks = num_batches * batch_size
@@ -160,8 +162,9 @@ class FreqRISE_Reinforce(nn.Module):
             'rewards' : reward_list,
             'run_time' : run_time,
         }
-        os.makedirs(f'notebooks/samples/freqrise_sm_{self.use_softmax}_batchsize_{self.batch_size}_numbatches_{self.num_batches}_R_{self.reward_fn}_lr_{self.lr}_alpha_{self.alpha}_beta_{self.beta}_decay_{self.decay}_numcells_{num_cells}', exist_ok=True)
-        with open(f'notebooks/samples/freqrise_sm_{self.use_softmax}_batchsize_{self.batch_size}_numbatches_{self.num_batches}_R_{self.reward_fn}_lr_{self.lr}_alpha_{self.alpha}_beta_{self.beta}_decay_{self.decay}_numcells_{num_cells}/sample_idx_{idx}.pkl', mode='wb') as f:
+        sample_path = f'notebooks/samples/freqrise_dset_{self.dataset}_sm_{self.use_softmax}_batchsize_{self.batch_size}_numbatches_{self.num_batches}_R_{self.reward_fn}_lr_{self.lr}_alpha_{self.alpha}_beta_{self.beta}_decay_{self.decay}_numcells_{num_cells}'
+        os.makedirs(sample_path, exist_ok=True)
+        with open(f'{sample_path}/sample_idx_{idx}.pkl', mode='wb') as f:
             pickle.dump(output_dict, f)
         return importance # Importance here is the saliency map
     

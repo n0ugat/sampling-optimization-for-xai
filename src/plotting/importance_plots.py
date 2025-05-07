@@ -3,7 +3,7 @@ from matplotlib import cm
 from matplotlib.colors import Normalize
 import numpy as np
 
-def ts_importance(ax, importance, timeseries, importance_2 = None, axis = None, normalize = True, width = 1.0, cmap = 'Blues', alpha = 0.7):
+def ts_importance(ax, importance, timeseries, importance_2 = None, axis = None, normalize = True, width = 1.0, cmap = 'Greens', alpha = 0.7):
     if axis is None:
         axis = np.arange(len(timeseries))
     my_cmap_mean = cm.get_cmap(cmap)
@@ -38,7 +38,7 @@ def ts_importance(ax, importance, timeseries, importance_2 = None, axis = None, 
         plot_col_mean_2 = my_cmap_mean(importance_2)#*color_weight_mean
     ax.bar(axis, np.ones_like(importance)*(np.max(timeseries)-np.min(timeseries))*2, bottom=np.min(timeseries), width=width,
             color=plot_col_mean, alpha = alpha)
-    ax.plot(axis, timeseries, color='black', alpha = 0.5)
+    ax.plot(axis, timeseries, color='black', alpha = 1.0, linewidth=1)
     if importance_2 is not None:
         ax.bar(axis, np.ones_like(importance)*(np.max(timeseries)-np.min(timeseries))*2, bottom=np.min(timeseries), width=width,
             color=plot_col_mean_2)

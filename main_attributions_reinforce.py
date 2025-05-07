@@ -50,7 +50,7 @@ def main(args):
     if not freqrise_file_output in attributions:
         # compute FreqRISE
         print('Creating FreqRISE')
-        freqrise = FreqRISE_Reinforce(model, batch_size=args.batch_size, num_batches=num_batches_freqrise, device=device, domain=args.explanation_domain, use_softmax=args.use_softmax, lr=args.lr, alpha=args.alpha, beta=args.beta, decay=args.decay, reward_fn=args.reward_fn)
+        freqrise = FreqRISE_Reinforce(model, batch_size=args.batch_size, num_batches=num_batches_freqrise, device=device, domain=args.explanation_domain, use_softmax=args.use_softmax, lr=args.lr, alpha=args.alpha, beta=args.beta, decay=args.decay, reward_fn=args.reward_fn, dataset=args.dataset)
         print('Computing FreqRISE')
         attributions[freqrise_file_output] = freqrise.forward_dataloader(test_loader, args.num_cells)
         print('FreqRISE computed')
@@ -91,7 +91,7 @@ if __name__ == '__main__':
     parser.add_argument('--lrp_window', type = int, default = 800, help='Window size for LRP')
     parser.add_argument('--lrp_hop', type = int, default = 800, help='Hop size for LRP')
     
-    parser.add_argument('--lr', type = float, default = 1e-4, help='Learning rate for reinforce algorithm')
+    parser.add_argument('--lr', type = float, default = 0.1, help='Learning rate for reinforce algorithm')
     parser.add_argument('--alpha', type = float, default = 1.0, help='Weight of primary reward towards loss for reinforce algorithm')
     parser.add_argument('--beta', type = float, default = 0.01, help='Weight of mask size towards loss for reinforce algorithm')
     parser.add_argument('--decay', type = float, default = 0.9, help='weight of baseline towards loss for reinforce algorithm')

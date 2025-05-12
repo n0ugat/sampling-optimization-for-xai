@@ -1,9 +1,6 @@
 import numpy as np
 from itertools import chain, combinations
-
-
-def synthetic_dataset_generator(n_samples=1000, length=400, noiselevel=0.1, add_random_peaks=True, const_class=None, seed=42):
-    """
+"""
     Generates a synthetic dataset of sine waves with added noise.
     
     Parameters:
@@ -18,6 +15,16 @@ def synthetic_dataset_generator(n_samples=1000, length=400, noiselevel=0.1, add_
     data (numpy.ndarray): Generated dataset of shape (n_samples, length).
     labels (list): List of labels corresponding to each sample.
     """
+
+
+def synthetic_dataset_generator(
+    n_samples=1000, 
+    length=400, 
+    noiselevel=0.1, 
+    add_random_peaks=True, 
+    const_class=None, 
+    seed=42):
+    
     np.random.seed(seed)
     frequency_classes = [50, 100, 150]
     n_freqs = len(frequency_classes)

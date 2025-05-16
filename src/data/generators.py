@@ -21,7 +21,7 @@ def synthetic_dataset_generator(n_samples=1000, length=400, noiselevel=0.1, seed
     labels = []
     
     for i in range(n_samples):
-        frequency_classes = [50, 100, 150] # Frequencies for the classes
+        frequency_classes = [int(length*0.2), int(length*0.5), int(length*0.8)] # Frequencies for the classes
         if not const_class:
             class_ = np.random.choice(np.uint8([0,1,2,3,4,5,6,7]), ) # One for each possible combination of frequencies
         else:

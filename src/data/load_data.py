@@ -10,7 +10,7 @@ def load_data(args):
     #     test_data, test_labels = torch.tensor(test_data).float(), torch.tensor(test_labels).long()
     #     test_loader = DataLoader(TensorDataset(test_data, test_labels), batch_size=256)
     if args.dataset == 'synthetic':
-        test_data, test_labels = synthetic_dataset_generator(args.n_samples, length=400, noiselevel=args.noise_level)
+        test_data, test_labels = synthetic_dataset_generator(args.n_samples, length=args.synth_sig_len, noiselevel=args.noise_level)
         test_data, test_labels = torch.tensor(test_data.reshape(args.n_samples, 1,1,-1)).float(), torch.tensor(test_labels).squeeze().long()
         test_loader = DataLoader(TensorDataset(test_data, test_labels), batch_size=64)
     elif args.dataset == 'AudioMNIST':

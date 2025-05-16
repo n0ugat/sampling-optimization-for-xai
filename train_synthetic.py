@@ -7,9 +7,9 @@ from torch.utils.data import DataLoader, TensorDataset
 import argparse
 import matplotlib.pyplot as plt
 
-def train_synthetic(n_samples, noise_level, model_path):
+def train_synthetic(n_samples, noise_level, synth_sig_len, model_path):
     print('Generating dataset')
-    signals, labels = synthetic_dataset_generator(n_samples, length=400, noiselevel=noise_level, seed=None)
+    signals, labels = synthetic_dataset_generator(n_samples, length=synth_sig_len, noiselevel=noise_level, seed=None)
     print('Dataset generated')
     print('Creating dataloaders')
     signals, labels = torch.tensor(signals).float(), torch.tensor(labels).long()
@@ -23,7 +23,7 @@ def train_synthetic(n_samples, noise_level, model_path):
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
     # Load the model
-    model = LinearModel(input_size=400, hidden_layers=2, hidden_size=128, output_size=8).to(device)
+    model = LinearModel(input_size=synth_sig_len, hidden_layers=2, hidden_size=128, output_size=8).to(device)
 
     # Define loss function and optimizer
     loss_fn = nn.CrossEntropyLoss()
@@ -87,7 +87,7 @@ def train_synthetic(n_samples, noise_level, model_path):
     plt.ylabel('Loss')
     plt.title('Loss vs Epochs')
     plt.legend()
-    plt.savefig(f'outputs/figures/loss_plot_synthetic_train_{noise_level}.png')
+    plt.savefig(f'outputs/figures/loss_plot_synthetic_train_{noise_level}_{synth_sig_len}.png')
     plt.close()
     
     plt.plot(collect_train_accuracy, label='Train Accuracy')
@@ -96,16 +96,17 @@ def train_synthetic(n_samples, noise_level, model_path):
     plt.ylabel('Accuracy')
     plt.title('Accuracy vs Epochs')
     plt.legend()
-    plt.savefig(f'outputs/figures/accuracy_plot_synthetic_train_{noise_level}.png')
+    plt.savefig(f'outputs/figures/accuracy_plot_synthetic_train_{noise_level}_{synth_sig_len}.png')
     plt.close()
     
     # Save the model
-    torch.save(model.state_dict(), f'{model_path}/synthetic_{noise_level}.pt')
+    torch.save(model.state_dict(), f'{model_path}/synthetic_{noise_level}_{synth_sig_len}.pt')
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('--model_path', type = str, default = 'models', help='Path to save model')
     parser.add_argument('--n_samples', type = int, default = 1000, help='Number of samples to generate')
     parser.add_argument('--noise_level', type = float, default = 0.5, help='Noise in dataset')
+    parser.add_argument('--synth_sig_len', type = int, default = 50, help='Length of the synthetic signals.')
 
     args = parser.parse_args()
-    train_synthetic(args.n_samples, args.noise_level, args.model_path)
+    train_synthetic(args.n_samples, args.noise_level, args.synth_sig_len, args.model_path)

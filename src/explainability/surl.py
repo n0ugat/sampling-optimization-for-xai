@@ -8,7 +8,7 @@ import pickle
 import os
 import time
 
-class FreqRISE_Reinforce(nn.Module):
+class SURL(nn.Module):
     def __init__(self,
                  encoder: nn.Module,
                  batch_size: int = 10,

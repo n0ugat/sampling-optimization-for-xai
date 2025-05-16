@@ -27,17 +27,13 @@ class FreqRISE(nn.Module):
                  batch_size: int = 10,
                  num_batches: int = 300,
                  device: str = 'cpu',
-                 domain = 'fft',
                  use_softmax = False,
-                 stft_params = None,
                  ):
 
         super().__init__()
 
         self.batch_size = batch_size
         self.device = device
-        self.domain = domain
-        self.stft_params = stft_params
 
         self.num_batches = num_batches
         self.use_softmax = use_softmax
@@ -61,20 +57,14 @@ class FreqRISE(nn.Module):
         p = []
         input_data = input_data.unsqueeze(0).to(self.device)
         # cast data to domain of interest
-        if self.domain == 'fft':
-            # Fast Fourier Transform (To frequency domain)
-            input_fft = tfft(input_data) 
-        else:
-            input_fft = input_data
-            
-        shape = input_fft.shape
-
-        mask_type = torch.complex64 if self.domain == 'fft' else torch.float32
+        # Fast Fourier Transform (To frequency domain)
+        input_fft = tfft(input_data)
+        mask_type = torch.complex64
 
         # generate masks
         # num_batches * batch_size = number of masks to generate, not number of inputs to process
         for _ in range(self.num_batches):
-            for masks in mask_generator(self.batch_size, shape, self.device, dtype = mask_type, **kwargs):
+            for masks in mask_generator(self.batch_size, input_fft.shape, self.device, dtype = mask_type, **kwargs):
             # for masks in mask_generator(self.batch_size, **kwargs):
                 if len(masks) == 2: # mask_generator returns a tuple ????
                     x_mask, masks = masks
@@ -83,8 +73,7 @@ class FreqRISE(nn.Module):
                     # apply mask
                     x_mask = input_fft*masks
                     # cast back to original domain
-                    if self.domain == 'fft':
-                        x_mask = tifft(x_mask, dim=-1) # Inverse Fast Fourier Transform (To time domain)
+                    x_mask = tifft(x_mask, dim=-1) # Inverse Fast Fourier Transform (To time domain)
                 # Shape is (batch_size, 1, 8000) for AudioNet
                 
                 with torch.no_grad(): 
@@ -123,37 +112,21 @@ class FreqRISE(nn.Module):
             batch_scores = [] # List to store the saliency maps for the current batch ??? (I don't know)
             print("Computing batch", i+1, "/", len(dataloader))
             i+=1
-            # j=0
+            j=0
             for sample, y in zip(data, target):
+                print("Computing signal", j+1, "/", len(data))
                 m_generator = mask_generator
-                # sample has shape (1, 1, 8000) for AudioNet
-
                 with torch.no_grad(): 
                     importance = self.forward(sample.float().squeeze(0), 
                                               mask_generator = m_generator, 
                                               num_cells = num_cells, 
-                                            #   num_banks = num_cells,
                                               probability_of_drop = probability_of_drop)
                 
                 # Selects the importance values for the given class y
                 importance = importance.cpu().squeeze()[...,y]/probability_of_drop
                 # min max normalize
-                # breakpoint() # Step 1
                 importance = (importance - importance.min()) / (importance.max() - importance.min())
-                # breakpoint() # Step 2
-                # pickle_output = {
-                #     'time_signal': sample.float().squeeze(0).squeeze(0).cpu(),
-                #     'freq_signal': tfft(sample.float().squeeze(0).squeeze(0).cpu().unsqueeze(0).to(self.device)).squeeze(0).cpu(),
-                #     'importance': importance.squeeze(0).cpu(),
-                #     'target': y.cpu(),
-                # }
-                # # Save the output to a pickle file
-                # with open(f'outputs/signal_digit_{j}.pkl', 'wb') as f:
-                #     pickle.dump(pickle_output, f)
-                # # importance of one input sample has shape (4001)
                 batch_scores.append(importance)
-                # j+=1
-            # batch_scores has shape (batch_size, 4001)
+                j += 1
             freqrise_scores.append(torch.stack(batch_scores))
-        # freqrise_scores has shape (len(dataloader), batch_size, 4001)
         return freqrise_scores

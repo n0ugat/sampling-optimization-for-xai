@@ -14,10 +14,13 @@ def main(args):
     model = load_model(args)
     device = 'cuda' if torch.cuda.is_available() else 'mps' if torch.backends.mps.is_available() and torch.backends.mps.is_built() else 'cpu'
     print(f'Using device: {device}')
+    
     if args.dataset == 'synthetic':
-        output_path = f'{args.output_path}/{args.dataset}_{args.noise_level}_{args.synth_sig_len}.pkl'
+        output_path = f'{args.output_path}/{args.dataset}_attributions_{args.noise_level}_{args.synth_sig_len}.pkl'
     elif args.dataset == 'AudioMNIST':
-        output_path = f'{args.output_path}/{args.dataset}_{args.labeltype}.pkl'
+        output_path = f'{args.output_path}/{args.dataset}_attributions_{args.labeltype}.pkl'
+    if args.debug_mode:
+        output_path = output_path.replace('.pkl', '_debug.pkl')
 
     # check if attributions are already computed
     if os.path.exists(output_path):
@@ -48,10 +51,10 @@ def main(args):
     
     model.to(device)
     num_batches = args.n_masks//args.batch_size
-    filename_start = f'freqrise_ns_{args.n_samples}_nm_{args.n_masks}_bs_{args.batch_size}_nc_{args.num_cells}_us_{args.use_softmax}'
+    filename_start = f'_ns_{args.n_samples}_nm_{args.n_masks}_bs_{args.batch_size}_nc_{args.num_cells}_us_{args.use_softmax}'
     
     # FreqRISE
-    freqrise_filename = filename_start + f'_dropprob_{args.probability_of_drop}'
+    freqrise_filename = 'freqrise' + filename_start + f'_dropprob_{args.probability_of_drop}'
     if args.use_FreqRISE and not freqrise_filename in attributions:
         # compute FreqRISE
         print('Creating FreqRISE')
@@ -61,7 +64,7 @@ def main(args):
         print('FreqRISE computed')
     
     # SURL
-    surl_filename = filename_start + f'_lr_{args.lr}_alpha_{args.alpha}_beta_{args.beta}_decay_{args.decay}'
+    surl_filename = 'surl' + filename_start + f'_lr_{args.lr}_alpha_{args.alpha}_beta_{args.beta}_decay_{args.decay}'
     if args.use_SURL and not surl_filename in attributions:
         # compute FreqRISE
         print('Creating SURL')
@@ -71,8 +74,11 @@ def main(args):
         print('SURL computed')
         
     # FiSURL
-    pass
+    fisurl_filename = 'fisurl' + filename_start + f'_lr_{args.lr}_alpha_{args.alpha}_beta_{args.beta}_decay_{args.decay}'
+    if args.use_FiSURL and not fisurl_filename in attributions:
+        print('FiSURL not implemented yet')
 
+    # get predictions and labels
     if not 'predictions' in attributions:
         # get predictions and labels
         predictions = []
@@ -85,10 +91,9 @@ def main(args):
         attributions['predictions'] = torch.cat(predictions, dim=0)
         attributions['labels'] = torch.cat(labels, dim=0)
 
+    # save attributions
     with open(output_path, 'wb') as f:
         pickle.dump(attributions, f)
-    
-    return None
 
 
 
@@ -100,6 +105,7 @@ if __name__ == '__main__':
     parser.add_argument('--model_path', type = str, default = 'models', help='Path to models folder')
     parser.add_argument('--output_path', type = str, default = 'outputs', help='Path to save output')
     parser.add_argument('--dataset', type = str, default = 'AudioMNIST', help='Dataset to use')
+    parser.add_argument('--debug_mode', action='store_true', help='Run in debug mode. Stores outputs in deletable .pkl file')
     # Explanation methods
     parser.add_argument('--use_FreqRISE', action='store_true', help=f'Explain with FreqRISE.')
     parser.add_argument('--use_SURL', action='store_true', help=f'Explain with SURL.')
@@ -128,6 +134,6 @@ if __name__ == '__main__':
     parser.add_argument('--decay', type = float, default = 0.9, help='weight of baseline towards loss for reinforce algorithm')
     
     args = parser.parse_args()    
-    if args.dataset == 'synthetic':
+    if args.dataset == 'synthetic' and (args.use_FreqRISE or args.use_SURL or args.use_FiSURL):
         assert args.synth_sig_len > args.num_cells, "Number of cells should be lower than synth_sig_len if using synthetic dataset"
     main(args)

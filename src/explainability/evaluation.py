@@ -7,13 +7,13 @@ from src.data.generators import powerset
 from src.lrp import dft_lrp
 from src.lrp import lrp_utils
 
-def deletion_curves(model, test_loader, importance, quantiles, domain = 'fft', device = 'cpu', stft_params = None, cutoff = None):
+def deletion_curves(model, test_loader, importance, quantiles, domain = 'fft', device = 'cpu', stft_params = None, cutoff = None, filterbank = None):
     deletion = {
         'mean_prob': [],
         'quantiles': quantiles
     }
     for quantile in quantiles:
-        mean_true_class_prob = mask_and_predict(model, test_loader, importance, quantile, domain = domain, device = device, stft_params = stft_params, cutoff = cutoff)
+        mean_true_class_prob = mask_and_predict(model, test_loader, importance, quantile, domain = domain, device = device, stft_params = stft_params, cutoff = cutoff, filterbank = filterbank)
         deletion['mean_prob'].append(mean_true_class_prob)
     auc = np.trapz(deletion['mean_prob'], deletion['quantiles'])
     deletion['AUC'] = auc
@@ -53,7 +53,7 @@ def localization_scores(attributions, labels, cutoff = None, only_pos = False):
     return loc_scores
 
 
-def mask_and_predict(model, test_loader, importance, quantile, domain = 'fft', device = 'cpu', stft_params = None, cutoff = None):
+def mask_and_predict(model, test_loader, importance, quantile, domain = 'fft', device = 'cpu', stft_params = None, cutoff = None, filterbank = None):
     model.eval().to(device)
     with torch.no_grad():
         correct = 0
@@ -76,9 +76,15 @@ def mask_and_predict(model, test_loader, importance, quantile, domain = 'fft', d
                 imp = torch.abs(data)
             else:
                 if domain in ['fft', 'time']:
-                    imp = importance[i].reshape(-1, 1, 1, data.shape[-1])
+                    if filterbank is not None:
+                        breakpoint()
+                        data = filterbank.batch_apply(data) # Shape: (test_batch_size, num_banks, 1, 1, fs)
+                        breakpoint()
+                    else:
+                        imp = importance[i].reshape(-1, 1, 1, data.shape[-1])
                 else:
                     imp = importance[i].squeeze()
+                breakpoint()
                 imp[imp < 0] = 0
             if cutoff is not None:
                 if cutoff == 'mean':

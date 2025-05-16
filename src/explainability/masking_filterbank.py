@@ -60,4 +60,4 @@ class FilterbankMaskPolicy(nn.Module):
             # Extract the mask from the grid with the correct shift and length
             masks[mask_i] = grid[mask_i, :, shift[mask_i]:shift[mask_i] + self.length]
 
-        return masks, log_probs # Return the mask and the log probability of the mask
+        return masks, log_probs # Return the mask and the log probability of the mask - masks is of shape (batch_size, 1, 1, num_banks)

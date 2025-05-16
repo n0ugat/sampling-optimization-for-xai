@@ -1,12 +1,14 @@
 #@title RELAX
-from torch.fft import rfft as tfft
-from torch.fft import irfft as tifft
-import torch
-import torch.nn as nn
-from src.explainability.masking_reinforce import MaskPolicy
 import pickle
 import os
 import time
+
+import torch
+import torch.nn as nn
+from torch.fft import rfft as tfft
+from torch.fft import irfft as tifft
+
+from src.explainability.masking_surl import MaskPolicy
 
 class SURL(nn.Module):
     def __init__(self,

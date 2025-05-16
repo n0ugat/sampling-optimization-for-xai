@@ -1,6 +1,6 @@
 .vscode/
 
-data/
+/data/
 outputs/signals/
 outputs/figures/
 outputs/hpclogs/

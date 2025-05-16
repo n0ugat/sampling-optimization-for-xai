@@ -1,11 +1,13 @@
-import torch
-from torch.utils.data import DataLoader
-import torch.optim as optim
 import glob
-from src.models.audiomnist import AudioNet, EarlyStopping
-from src.data.dataloader import AudioNetDataset
 import argparse
 import os
+
+import torch
+import torch.optim as optim
+from torch.utils.data import DataLoader
+
+from src.models import AudioNet, EarlyStopping
+from src.data import AudioNetDataset
 
 
 def main(args):

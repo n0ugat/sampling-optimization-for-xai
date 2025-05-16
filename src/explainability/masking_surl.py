@@ -3,7 +3,6 @@ import torch.nn as nn
 import torch.nn.functional as F
 from torch.distributions import Bernoulli
 
-
 class MaskPolicy(nn.Module):
     def __init__(self, batch_size, shape, num_cells, device, dtype):
         super().__init__()

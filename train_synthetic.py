@@ -1,11 +1,13 @@
-from src.data.generators import synthetic_dataset_generator
-from src.models.synthetic_model import LinearModel
+import argparse
+import matplotlib.pyplot as plt
+
 import torch
 import torch.nn as nn
 import torch.optim as optim
 from torch.utils.data import DataLoader, TensorDataset
-import argparse
-import matplotlib.pyplot as plt
+
+from src.data import synthetic_dataset_generator
+from src.models import LinearModel
 
 def train_synthetic(n_samples, noise_level, synth_sig_len, model_path):
     print('Generating dataset')

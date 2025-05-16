@@ -1,7 +1,6 @@
 import numpy as np
 from itertools import chain, combinations
 
-
 def synthetic_dataset_generator(
     n_samples=1000, 
     length=400, 

@@ -1,11 +1,12 @@
 import matplotlib.pyplot as plt
 import numpy as np
-from torch.fft import rfft as tfft
 import h5py as h5
-import torch
-
 import sys
 import os
+
+import torch
+from torch.fft import rfft as tfft
+
 # Add repo directory to system path
 repo_dir = os.path.abspath(os.path.join(os.getcwd(), '.'))
 sys.path.append(repo_dir)

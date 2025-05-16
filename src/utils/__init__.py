@@ -1,1 +1,1 @@
-from src.utils.filterbank import *
+from .filterbank import *

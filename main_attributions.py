@@ -1,13 +1,11 @@
 import torch
 import argparse
-from src.explainability.freqrise import FreqRISE
-from src.explainability.surl import SURL
-from src.explainability.evaluation import compute_gradient_scores
-from src.data.load_data import load_data
-from src.models.load_model import load_model
 import pickle
 import os
 
+from src.explainability import FreqRISE, SURL, compute_gradient_scores
+from src.data import load_data
+from src.models import load_model
 
 def main(args):
     print('Loading data')
@@ -28,7 +26,7 @@ def main(args):
     else:
         attributions = {}
 
-    ## Compute all attributions
+    ## Compute baseline attributions
     lrp_stft_args = {'n_fft': args.lrp_window, 'hop_length': args.lrp_hop, 'center': False}
     if args.use_baselines:
         if not 'saliency' in attributions:
@@ -46,6 +44,7 @@ def main(args):
             print('Computing IG')
             attributions['IG'] = compute_gradient_scores(model, test_loader, attr_method = 'ig', domain = 'fft', stft_params = lrp_stft_args)
             print('IG computed')
+    
     
     model.to(device)
     num_batches = args.n_masks//args.batch_size

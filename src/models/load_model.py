@@ -1,7 +1,7 @@
 import torch
 import os
-from src.models.audiomnist import AudioNet
-from src.models.synthetic_model import LinearModel as SynthLinearModel
+
+from src.models import AudioNet, LinearModel
 from train_synthetic import train_synthetic
 
 def load_model(args):
@@ -18,7 +18,7 @@ def load_model(args):
         if not os.path.exists(model_path):
             print("Synthetic model not found, training a new one...")
             train_synthetic(1000, args.noise_level, args.synth_sig_len, args.model_path)
-        model = SynthLinearModel(input_size=args.synth_sig_len, hidden_layers=2, hidden_size=128, output_size=8)
+        model = LinearModel(input_size=args.synth_sig_len, hidden_layers=2, hidden_size=128, output_size=8)
         model.load_state_dict(torch.load(model_path, map_location=torch.device('cpu'), weights_only=False))
     model.eval()
     return model

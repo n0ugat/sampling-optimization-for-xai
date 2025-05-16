@@ -1,8 +1,9 @@
-import torch
-from torch.utils.data import Dataset
 import numpy as np
 import glob
 import h5py as h5
+
+import torch
+from torch.utils.data import Dataset
 
 class AudioNetDataset(Dataset):
     def __init__(self, path, preload, dataset, labeltype = 'digit', splits = [0], subsample = False, seed = 0, add_noise = False, noiselevel = 1):

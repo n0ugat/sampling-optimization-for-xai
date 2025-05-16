@@ -1,25 +1,10 @@
 #@title RELAX
-from torch.fft import rfft as tfft
-from torch.fft import irfft as tifft
 import torch
 import torch.nn as nn
-from src.explainability.masking import mask_generator
-from scipy.io import wavfile
-import numpy as np
+from torch.fft import rfft as tfft
+from torch.fft import irfft as tifft
 
-# import pickle
-
-def plot(importances, sample_idx, digit: bool = False, identifier: str = ''):
-    import matplotlib.pyplot as plt
-    fig, ax = plt.subplots(figsize=(10, 5))
-    ax.plot(importances, marker='o')
-    ax.set_title('Importances Plot')
-    ax.set_xlabel('frequency (Hz)')
-    ax.set_ylabel('Importance Value')
-    ax.grid()
-    plt.tight_layout()
-    plt.savefig(f'outputs/importances_plot_{"digit_" if digit else ""}{sample_idx}_{identifier}.png')
-    plt.close()
+from src.explainability.masking_freqrise import mask_generator
 
 class FreqRISE(nn.Module):
     def __init__(self,

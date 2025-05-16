@@ -20,7 +20,6 @@ class FreqRISE_Reinforce(nn.Module):
                  alpha=1.00,
                  beta=0.01,
                  decay=0.9,
-                 reward_fn = "pred",
                  dataset = "AudioMNIST"
                  ):
 
@@ -33,37 +32,12 @@ class FreqRISE_Reinforce(nn.Module):
         self.alpha=alpha
         self.beta=beta
         self.decay=decay
-        self.reward_fn = reward_fn
         self.dataset = dataset
 
         self.num_batches = num_batches
         self.num_masks = num_batches * batch_size
         self.use_softmax = use_softmax
         self.encoder = encoder.eval().to(self.device) # function that evaluates the pretrained model on a given input
-    
-    def reward_fn_saliency(self, saliency, mask):
-        """
-        Reward = saliency score from masked input - penalty for mask size
-        """
-        sal_score = saliency.mean() # Sum saliency: higher is better
-        mask_size = mask.abs().mean() # Penalize large mask
-        reward = self.alpha * sal_score - self.beta * mask_size
-        return reward
-        
-    def reward_fn_pred(self, pred_original, pred_masked, mask, target_class):
-        """
-        Reward = classification faithfulness - penalty for mask size
-        """
-        # Faithfulness: how close is the masked prediction to original
-        pred_diff = torch.abs(pred_original[target_class] - pred_masked[target_class])
-        faithfulness_reward = -pred_diff  # smaller difference = better
-
-        # Sparsity: fewer active frequencies = better
-        mask_size = mask.abs().mean()
-        sparsity_penalty = mask_size  # encourage fewer active cells
-
-        reward = self.alpha * faithfulness_reward - self.beta * sparsity_penalty
-        return reward
 
 
     def forward(self, input_data, target_class, num_cells, idx) -> None:
@@ -120,17 +94,18 @@ class FreqRISE_Reinforce(nn.Module):
                     predictions = torch.softmax(predictions, dim=-1)
 
             rewards = []
+            sals = torch.matmul(predictions.unsqueeze(2).float(), masks.abs().float()).transpose(1,2)
+            p.append(sals)
+            # Faithfulness: how close is the masked prediction to original
+            pred_diffs = torch.abs(pred_original[target_class] - predictions[:,target_class])
+            faithfulness_rewards = -pred_diffs  # smaller difference = better
 
-            for mask, pred_masked in zip(masks, predictions):
-                sal = torch.matmul(pred_masked.unsqueeze(0).transpose(0,1).float(), mask.abs().float()).transpose(0,1).unsqueeze(0)
-                p.append(sal)
-                if self.reward_fn == "pred":
-                    reward = self.reward_fn_pred(pred_original, pred_masked, mask, target_class) # Compute the reward using the saliency and the masks
-                elif self.reward_fn == "saliency":
-                    reward = self.reward_fn_saliency(sal, mask) # Compute the reward using the saliency and the masks
-                rewards.append(reward)
+            # Sparsity: fewer active frequencies = better
+            mask_sizes = masks.abs().mean(dim=-1).squeeze()
+            sparsity_penalties = mask_sizes  # encourage fewer active cells
 
-            rewards = torch.stack(rewards).to(self.device)
+            rewards = (self.alpha * faithfulness_rewards - self.beta * sparsity_penalties).to(self.device)
+
             mean_reward = rewards.mean()
             baseline = self.decay * baseline + (1 - self.decay) * mean_reward # Update the baseline
             loss = -((rewards - baseline) * log_probs).mean() # Reinforce loss, negative because we want to maximize the expected reward
@@ -141,9 +116,9 @@ class FreqRISE_Reinforce(nn.Module):
 
             params_saved.append(m_policy.logits[random_indices].tolist())
             losses.append(loss.item())
-            reward_list.append(reward.item())
-            # if i % 10 == 0:
-            #     print(f"Iteration {i}, Loss: {loss.item()}, Reward: {reward.item()}, Baseline: {baseline}")
+            for reward in rewards:
+                reward_list.append(reward.item())
+
         importance = torch.cat(p, dim=0).sum(dim=0)/(self.num_batches*self.batch_size)
         # Selects the importance values for the given class y
         importance = importance.cpu().squeeze()[...,target_class]#/probability_of_drop
@@ -162,7 +137,7 @@ class FreqRISE_Reinforce(nn.Module):
             'rewards' : reward_list,
             'run_time' : run_time,
         }
-        sample_path = f'notebooks/samples/freqrise_dset_{self.dataset}_sm_{self.use_softmax}_batchsize_{self.batch_size}_numbatches_{self.num_batches}_R_{self.reward_fn}_lr_{self.lr}_alpha_{self.alpha}_beta_{self.beta}_decay_{self.decay}_numcells_{num_cells}'
+        sample_path = f'notebooks/samples/freqrise_dset_{self.dataset}_sm_{self.use_softmax}_batchsize_{self.batch_size}_numbatches_{self.num_batches}_lr_{self.lr}_alpha_{self.alpha}_beta_{self.beta}_decay_{self.decay}_numcells_{num_cells}'
         os.makedirs(sample_path, exist_ok=True)
         with open(f'{sample_path}/sample_idx_{idx}.pkl', mode='wb') as f:
             pickle.dump(output_dict, f)
@@ -195,15 +170,8 @@ class FreqRISE_Reinforce(nn.Module):
                                             target_class = y,
                                             num_cells = num_cells,
                                             idx=j*i+j)
-                # Selects the importance values for the given class y
-                # importance = importance.cpu().squeeze()[...,y]#/probability_of_drop
-                # min max normalize
-                # importance = (importance - importance.min()) / (importance.max() - importance.min())
-                # # importance of one input sample has shape (4001)
                 batch_scores.append(importance)
                 j+=1
-            # batch_scores has shape (batch_size, 4001)
             freqrise_scores.append(torch.stack(batch_scores))
             i+=1
-        # freqrise_scores has shape (len(dataloader), batch_size, 4001)
         return freqrise_scores

@@ -43,30 +43,49 @@ class FilterBank:
             return torch.stack(y, dim=0), bank_borders
         return torch.stack(y, dim=0)
     
+    def batch_apply(self, x):
+        ys = []
+        for i in range(x.shape[0]):
+            y = self.apply(x[i])
+            ys.append(y)
+        ys = torch.stack(ys, dim=0)
+        return ys # Shape: (test_batch_size, num_banks, 1, 1, fs)
+
     def forward(self, x, mask=None, return_bank_borders=False):
-        # breakpoint()
         if return_bank_borders:
             y, bank_borders = self.apply(x, return_bank_borders=True)
         else:
             y = self.apply(x)
 
-        # breakpoint()
         # Mask shape is (batch_size, 1, 1, num_banks)
         # y shape is (num_banks, 1, 1, self.fs)
         if mask is not None:
-            y = y.permute(1, 2, 0, 3)
-            mask = mask.permute(0, 1, 3, 2)
+            y = y.permute(1, 2, 0, 3) # [num_banks, 1, 1, fs] -> [batch_size, 1, num_banks, fs]
+            mask = mask.permute(0, 1, 3, 2) # [batch_size, 1, 1, num_banks] -> [batch_size, 1, num_banks, 1]
             # mask = mask[:, None, None, None]
             # mask = mask.unsqueeze(1)
-            masked = mask * y  # [50, 1, 10, 8000]
-            masked = torch.sum(masked, dim=2).unsqueeze(2)  # [50, 1, 1, 8000] # Sum the filtered signals along the frequency bands
+            masked = mask * y # [50, 1, 10, 8000] - (batch_size, 1, num_banks, fs)
+            masked = torch.sum(masked, dim=2).unsqueeze(2) # [50, 1, 1, 8000] # Sum the filtered signals along the frequency bands
             # y = y * mask
-            # breakpoint()
 
         # if return_bank_borders:
         #     return torch.sum(y, dim=0), bank_borders
         # return torch.sum(y, dim=0) # Sum the filtered signals along the frequency bands
-
+        if mask is None:
+            y = y.permute(1, 2, 0, 3)
+            masked = torch.sum(y, dim=2).unsqueeze(2)
         if return_bank_borders:
             return masked, bank_borders
-        return masked
+        return masked # Shape: (batch_size, 1, 1, fs)
+    
+
+    #####
+    def batch_forward(self, x, mask=None):
+        ys = []
+
+        for i in range(x.shape[0]):
+            y = self.forward(x[i], mask=mask, return_bank_borders=False)
+            ys.append(y)
+
+        ys = torch.stack(ys, dim=0).squeeze(1) # Shape: (batch_size, 1, 1, fs)
+        return ys

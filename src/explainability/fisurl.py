@@ -20,6 +20,7 @@ class FiSURL(nn.Module): # FiSURL: Filterbank Sampling Using Reinforcement Learn
                 bandwidth = None,
                 batch_size: int = 10, 
                 num_batches: int = 300,
+                keep_ratio: float = 0.05, # Between 0.05 and 0.15 in FLEXtime
                 device: str = 'cpu',
                 use_softmax = False,
                 use_rl: bool = True,
@@ -39,6 +40,7 @@ class FiSURL(nn.Module): # FiSURL: Filterbank Sampling Using Reinforcement Learn
         # Initialize mask generator parameters
         self.batch_size = batch_size
         self.num_batches = num_batches
+        self.keep_ratio = keep_ratio
         self.device = device
 
         # Initialize encoder
@@ -73,7 +75,8 @@ class FiSURL(nn.Module): # FiSURL: Filterbank Sampling Using Reinforcement Learn
 
         # Sparsity: fewer active frequencies = better
         mask_size = mask.abs().mean()
-        sparsity_penalty = mask_size  # encourage fewer active cells
+        # sparsity_penalty = mask_size  # encourage fewer active cells
+        sparsity_penalty = torch.max(mask_size - torch.tensor(self.keep_ratio).to(self.device), torch.tensor(0.).to(self.device))
 
         reward = self.alpha * faithfulness_reward - self.beta * sparsity_penalty
         return reward
@@ -108,7 +111,7 @@ class FiSURL(nn.Module): # FiSURL: Filterbank Sampling Using Reinforcement Learn
                 # Use RL mask generator
                 masks, log_probs = m_policy()
                 masks = masks.to(self.device)
-                x_masked = self.filter_bank.forward(input_data, mask=masks) # Apply the mask to the input data
+                x_masked = self.filter_bank.forward(input_data, mask=masks) # Apply the mask to the input data - masked data is of shape (batch_size, 1, 1, fs)
 
                 with torch.no_grad():
                     predictions = self.encoder(x_masked.float().to(self.device), only_feats = False).detach()
@@ -118,7 +121,12 @@ class FiSURL(nn.Module): # FiSURL: Filterbank Sampling Using Reinforcement Learn
                 rewards = []
 
                 for mask, pred_masked in zip(masks, predictions):
-                    # sal = torch.matmul(pred_masked.unsqueeze(0).transpose(0,1).float(), mask.abs().float()).transpose(0,1).unsqueeze(0)
+                    breakpoint()
+                    # sal = torch.matmul(pred_masked.unsqueeze(0).transpose(0,1).float(), mask.abs().float()).transpose(0,1).unsqueeze(0) # Saliency computation from SURL
+                    # Shape of mask
+                    # Shape of predictions.transpose(0,1): (num_classes, batch_size)
+                    # Shape of masks.view(self.batch_size, -1).abs(): (batch_size, num_banks)
+                    # Shape of sal: (1, num_classes, batch_size)
                     sal = torch.matmul(predictions.transpose(0,1).float(), masks.view(self.batch_size, -1).abs().float()).transpose(0,1).unsqueeze(0).cpu() # Compute saliency
                     saliencies.append(sal)
                     if self.reward_fn == "pred":
@@ -147,7 +155,7 @@ class FiSURL(nn.Module): # FiSURL: Filterbank Sampling Using Reinforcement Learn
                 # Generate a batch of masks
                 for masks in mask_generator(self.batch_size, shape, **kwargs):
                     masks = masks.to(self.device)
-                    x_masked = self.filter_bank.forward(input_data, mask=masks) # Apply the mask to the input data
+                    x_masked = self.filter_bank.forward(input_data, mask=masks) # Apply the mask to the input data - masked data is of shape (batch_size, 1, 1, fs)
 
                     with torch.no_grad():
                         predictions = self.encoder(x_masked.float().to(self.device), only_feats = False).detach() # Pass the masked input through the encoder

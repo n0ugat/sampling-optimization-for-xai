@@ -5,6 +5,7 @@ __pycache__/
 outputs/signals/
 outputs/figures/
 outputs/hpclogs/
+outputs/samples/
 notebooks/samples/
 
 submit.sh

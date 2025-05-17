@@ -2,6 +2,8 @@ import torch
 import argparse
 import pickle
 import os
+import random
+import string
 
 from src.explainability import FreqRISE, SURL, compute_gradient_scores
 from src.data import load_data
@@ -32,6 +34,10 @@ def main(args):
             attributions = pickle.load(f)
     else:
         attributions = {}
+
+    # Random ID of this run. For saving samples of signals
+    chars = string.ascii_letters + string.digits  # a-zA-Z0-9
+    random_ID = ''.join(random.choices(chars, k=8))
 
     ## Compute baseline attributions
     lrp_stft_args = {'n_fft': args.lrp_window, 'hop_length': args.lrp_hop, 'center': False}
@@ -72,7 +78,29 @@ def main(args):
     if args.use_SURL and not surl_filename in attributions:
         # compute FreqRISE
         print('Creating SURL')
-        freqrise = SURL(model, batch_size=args.batch_size, num_batches=num_batches, device=device, use_softmax=args.use_softmax, lr=args.lr, alpha=args.alpha, beta=args.beta, decay=args.decay, dataset=args.dataset)
+        random_ID_dir = None
+        if args.save_signals:
+            # Save metadata to a txt file
+            random_ID_dir = os.path.join(args.output_path, 'samples', random_ID)
+            os.makedirs(random_ID_dir, exist_ok=True)
+            with open(os.path.join(random_ID_dir, f'metadata_{random_ID}.txt'), 'w') as meta_file:
+                meta_file.write(f'Metadata for SURL. ID: {random_ID}\n')
+                meta_file.write(f'Dataset: {args.dataset}\n')
+                if args.dataset == 'AudioMNIST':
+                    meta_file.write(f'Label Type: {args.labeltype}\n')
+                elif args.dataset == 'synthetic':
+                    meta_file.write(f'Noise Level: {args.noise_level}\n')
+                    meta_file.write(f'Synthetic Signal Length: {args.synth_sig_len}\n')
+                meta_file.write(f'Num Samples: {args.n_samples}\n')
+                meta_file.write(f'Num Masks: {args.n_masks}\n')
+                meta_file.write(f'Batch Size: {args.batch_size}\n')
+                meta_file.write(f'Num Cells: {args.num_cells}\n')
+                meta_file.write(f'Use Softmax: {args.use_softmax}\n')
+                meta_file.write(f'Learning Rate: {args.lr}\n')
+                meta_file.write(f'Alpha: {args.alpha}\n')
+                meta_file.write(f'Beta: {args.beta}\n')
+                meta_file.write(f'Decay: {args.decay}')
+        freqrise = SURL(model, batch_size=args.batch_size, num_batches=num_batches, device=device, use_softmax=args.use_softmax, lr=args.lr, alpha=args.alpha, beta=args.beta, decay=args.decay, dataset=args.dataset, save_signals_path=random_ID_dir)
         print('Computing SURL')
         attributions[surl_filename] = freqrise.forward_dataloader(test_loader, args.num_cells)
         print('SURL computed')
@@ -112,6 +140,7 @@ if __name__ == '__main__':
     parser.add_argument('--debug_mode', action='store_true', help='Run in debug mode. Stores outputs in deletable .pkl file')
     parser.add_argument('--job_idx', type = int, default = None, help='Job idx for hpc batch job. Used to store output seperately for parallel jobs')
     parser.add_argument('--job_name', type = str, default = None, help='Job name for hpc batch job. Used to create a folder to store seperate outputs in')
+    parser.add_argument('--save_signals', action='store_true', help='Save signals when running attributions.')
     # Explanation methods
     parser.add_argument('--use_FreqRISE', action='store_true', help=f'Explain with FreqRISE.')
     parser.add_argument('--use_SURL', action='store_true', help=f'Explain with SURL.')

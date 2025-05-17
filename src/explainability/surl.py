@@ -16,25 +16,25 @@ class SURL(nn.Module):
                  batch_size: int = 10,
                  num_batches: int = 300,
                  device: str = 'cpu',
-                 domain = 'fft',
                  use_softmax = False,
                  lr=1e-4,
                  alpha=1.00,
                  beta=0.01,
                  decay=0.9,
-                 dataset = "AudioMNIST"
+                 dataset = "AudioMNIST",
+                 save_signals_path = None
                  ):
 
         super().__init__()
 
         self.batch_size = batch_size
         self.device = device
-        self.domain = domain
         self.lr=lr
         self.alpha=alpha
         self.beta=beta
         self.decay=decay
         self.dataset = dataset
+        self.save_signals_path = save_signals_path
 
         self.num_batches = num_batches
         self.num_masks = num_batches * batch_size
@@ -57,18 +57,16 @@ class SURL(nn.Module):
             torch.Tensor: The saliency map of the input data.
         """
         p = []
-        # cast data to domain of interest
-        if self.domain == 'fft':
-            # Fast Fourier Transform (To frequency domain)
-            input_fft = tfft(input_data) 
-        else:
-            input_fft = input_data
-            
-        shape = input_fft.shape
-        mask_type = torch.complex64 if self.domain == 'fft' else torch.float32
-        start_time = time.time()
+        # cast data to frequency domain
+        input_fft = tfft(input_data) 
+        print("input_data", input_data.device)
+        print("self.encoder", next(self.encoder.parameters()).device)
+        print("input_fft", input_fft.device)
+        breakpoint()
+
+        mask_type = torch.complex64
         
-        m_policy = MaskPolicy(batch_size=self.batch_size, shape=shape, num_cells = num_cells, device = self.device, dtype=mask_type).to(self.device)
+        m_policy = MaskPolicy(batch_size=self.batch_size, shape=input_fft.shape, num_cells = num_cells, device = self.device, dtype=mask_type).to(self.device)
         optimizer = torch.optim.Adam(m_policy.parameters(), lr=self.lr)
         baseline = 0.0
         
@@ -78,16 +76,20 @@ class SURL(nn.Module):
             if self.use_softmax:
                 pred_original = torch.softmax(pred_original, dim=-1)
         
-        random_indices = torch.randint(0, num_cells, (4,))
-        params_saved = []
-        losses = []
-        reward_list = []
-        
+        if self.save_signals_path:
+            random_indices = torch.randint(0, num_cells, (4,))
+            params_saved = []
+            losses = []
+            reward_list = []
+            start_time = time.time()
+
         for i in range(self.num_batches):
             masks, log_probs = m_policy() # Sample a batch of masks from the Bernoulli distribution
+            print("masks", masks.device)
+            print("log_probs", log_probs.device)
+            breakpoint()
             x_masks = input_fft*masks
-            if self.domain == 'fft':
-                x_masks = tifft(x_masks, dim=-1)
+            x_masks = tifft(x_masks, dim=-1)
 
             with torch.no_grad():
                 # Get the model prediction for the masked input
@@ -98,20 +100,29 @@ class SURL(nn.Module):
             rewards = []
             sals = torch.matmul(predictions.unsqueeze(2).float(), masks.abs().float()).transpose(1,2)
             p.append(sals)
+            print("predictions", predictions.device)
+            print("sals", sals.device)
+            breakpoint()
             # Faithfulness: how close is the masked prediction to original
-            pred_diffs = torch.abs(pred_original[target_class] - predictions[:,target_class])
-            faithfulness_rewards = -pred_diffs  # smaller difference = better
+            faithfulness_rewards = -torch.abs(pred_original[target_class] - predictions[:,target_class])
+            # smaller difference = better
 
             # Sparsity: fewer active frequencies = better
-            mask_sizes = masks.abs().mean(dim=-1).squeeze()
-            sparsity_penalties = mask_sizes  # encourage fewer active cells
+            sparsity_penalties = masks.abs().mean(dim=-1).squeeze()
+            # encourage fewer active cells
 
-            rewards = (self.alpha * faithfulness_rewards - self.beta * sparsity_penalties).to(self.device)
+            rewards = (self.alpha * faithfulness_rewards - self.beta * sparsity_penalties)# .to(self.device)
 
             mean_reward = rewards.mean()
             baseline = self.decay * baseline + (1 - self.decay) * mean_reward # Update the baseline
             loss = -((rewards - baseline) * log_probs).mean() # Reinforce loss, negative because we want to maximize the expected reward
-
+            print("faithfulness_rewards", faithfulness_rewards.device)
+            print("sparsity_penalties", sparsity_penalties.device)
+            print("rewards", rewards.device)
+            print("mean_reward", mean_reward.device)
+            print("baseline", baseline.device)
+            print("loss", loss.device)
+            breakpoint()
             optimizer.zero_grad() # Zero the gradients  
             loss.backward() # Backpropagation
             optimizer.step() # Update the policy network
@@ -123,7 +134,9 @@ class SURL(nn.Module):
 
         importance = torch.cat(p, dim=0).sum(dim=0)/(self.num_batches*self.batch_size)
         # Selects the importance values for the given class y
+        print("importance 1", importance.device)
         importance = importance.cpu().squeeze()[...,target_class]#/probability_of_drop
+        print("importance 2", importance.device)
         # min max normalize
         importance = (importance - importance.min()) / (importance.max() - importance.min())
         run_time = time.time() - start_time

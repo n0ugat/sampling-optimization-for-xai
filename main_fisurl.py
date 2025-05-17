@@ -44,16 +44,16 @@ def main(args):
         print('IG computed')
     model.to(device)
     # Create FiSURL
-    rl_params = {'lr': 0.05, 'alpha': 1.00, 'beta': 1.00, 'decay': 0.9, 'reward_fn': 'pred'}
+    rl_params = {'lr': 0.05, 'alpha': 1.00, 'beta': 1.00, 'decay': 0.9}
     fisurl = FiSURL(model, num_taps=args.num_taps, num_banks=args.num_banks, fs=args.fs, bandwidth=args.bandwidth, batch_size=50, num_batches=args.fisurl_samples//10, keep_ratio=args.keep_ratio, device=device, use_softmax=args.use_softmax, use_rl=args.use_rl, rl_params=rl_params)
     # num_batches=args.fisurl_samples//50
     # rl_params={'lr': 1e-4, 'alpha': 1.00, 'beta': 0.01, 'decay': 0.9, 'reward_fn': 'pred'}
     # rl_params={'lr': 0.05, 'alpha': 1.00, 'beta': 0.05, 'decay': 0.9, 'reward_fn': 'pred'}
     # Compute FiSURL
-    if not f'fisurl_{args.num_banks}_{args.fisurl_samples}_dropprob_{args.probability_of_drop}' in attributions or not f'fisurl_{args.num_banks}_{args.fisurl_samples}_rl_{rl_params['lr']}_{rl_params['alpha']}_{rl_params['beta']}_{rl_params['decay']}_{rl_params['reward_fn']}' in attributions:
+    if not f'fisurl_{args.num_banks}_{args.fisurl_samples}_dropprob_{args.probability_of_drop}' in attributions or not f'fisurl_{args.num_banks}_{args.fisurl_samples}_rl_{rl_params['lr']}_{rl_params['alpha']}_{rl_params['beta']}_{rl_params['decay']}' in attributions:
         if args.use_rl:
             print('Computing FiSURL')
-            attributions[f'fisurl_{args.num_banks}_{args.fisurl_samples}_rl_{rl_params['lr']}_{rl_params['alpha']}_{rl_params['beta']}_{rl_params['decay']}_{rl_params['reward_fn']}'] = fisurl.forward_dataloader(test_loader, args.num_banks, args.probability_of_drop)
+            attributions[f'fisurl_{args.num_banks}_{args.fisurl_samples}_rl_{rl_params['lr']}_{rl_params['alpha']}_{rl_params['beta']}_{rl_params['decay']}'] = fisurl.forward_dataloader(test_loader, args.num_banks, args.probability_of_drop)
             print('FiSURL computed')
         else:
             print('Computing FiSURL with Random Sampling')

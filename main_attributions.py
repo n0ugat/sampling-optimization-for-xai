@@ -144,19 +144,16 @@ if __name__ == '__main__':
     if args.job_idx and args.job_name:
         jobarray_vals = [
             {'u_FR':False,'u_S':False,'u_FS':False,'ns':10,'nm':150,'bs':10,'nc':10,'us':False,'ub':True,'lw':800,'lh':800,'pd':0.5,'lr':0.1,'a':1.0,'b':0.01,'d':0.9},
-            {'ds':'synthetic','u_FR':False,'u_S':False,'u_FS':False,'lt':'digit','nl':0.5,'ssl':50,'ns':10,'nm':150,'bs':10,'nc':10,'us':False,'ub':True,'lw':800,'lh':800,'pd':0.5,'lr':0.1,'a':1.0,'b':0.01,'d':0.9},
-            {'ds':'synthetic','u_FR':True,'u_S':False,'u_FS':False,'lt':'digit','nl':0.5,'ssl':50,'ns':10,'nm':150,'bs':10,'nc':10,'us':False,'ub':False,'lw':800,'lh':800,'pd':0.5,'lr':0.1,'a':1.0,'b':0.01,'d':0.9},
-            {'ds':'synthetic','u_FR':True,'u_S':True,'u_FS':True,'lt':'digit','nl':0.5,'ssl':50,'ns':10,'nm':150,'bs':10,'nc':10,'us':False,'ub':False,'lw':800,'lh':800,'pd':0.5,'lr':0.1,'a':1.0,'b':0.01,'d':0.9},
-            {'ds':'synthetic','u_FR':False,'u_S':True,'u_FS':False,'lt':'digit','nl':0.5,'ssl':50,'ns':10,'nm':150,'bs':10,'nc':10,'us':False,'ub':False,'lw':800,'lh':800,'pd':0.5,'lr':0.1,'a':1.0,'b':0.01,'d':0.9}
+            {'u_FR':False,'u_S':False,'u_FS':False,'ns':10,'nm':150,'bs':10,'nc':10,'us':False,'ub':True,'lw':800,'lh':800,'pd':0.5,'lr':0.1,'a':1.0,'b':0.01,'d':0.9},
+            {'u_FR':True,'u_S':False,'u_FS':False,'ns':10,'nm':150,'bs':10,'nc':10,'us':False,'ub':False,'lw':800,'lh':800,'pd':0.5,'lr':0.1,'a':1.0,'b':0.01,'d':0.9},
+            {'u_FR':True,'u_S':True,'u_FS':True,'ns':10,'nm':150,'bs':10,'nc':10,'us':False,'ub':False,'lw':800,'lh':800,'pd':0.5,'lr':0.1,'a':1.0,'b':0.01,'d':0.9},
+            {'u_FR':False,'u_S':True,'u_FS':False,'ns':10,'nm':150,'bs':10,'nc':10,'us':False,'ub':False,'lw':800,'lh':800,'pd':0.5,'lr':0.1,'a':1.0,'b':0.01,'d':0.9}
         ]
+        
         job_vals = jobarray_vals[args.job_idx]
-        args.dataset =              job_vals['ds']
         args.use_FreqRISE =         job_vals['u_FR']
         args.use_SURL =             job_vals['u_S']
         args.use_FiSURL =           job_vals['u_FS']
-        args.labeltype =            job_vals['lt']
-        args.noise_level =          job_vals['nl']
-        args.synth_sig_len =        job_vals['ssl']
         args.n_samples =            job_vals['ns']
         args.n_masks =              job_vals['nm']
         args.batch_size =           job_vals['bs']

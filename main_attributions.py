@@ -21,6 +21,10 @@ def main(args):
         output_path = f'{args.output_path}/{args.dataset}_attributions_{args.labeltype}.pkl'
     if args.debug_mode:
         output_path = output_path.replace('.pkl', '_debug.pkl')
+    if args.job_name:
+        output_path = output_path.replace(f'{args.output_path}', f'{args.output_path}/{args.job_name}')
+    if args.job_idx:
+        output_path = output_path.replace('.pkl', f'_ID_{args.job_idx}.pkl')
 
     # check if attributions are already computed
     if os.path.exists(output_path):
@@ -106,6 +110,8 @@ if __name__ == '__main__':
     parser.add_argument('--output_path', type = str, default = 'outputs', help='Path to save output')
     parser.add_argument('--dataset', type = str, default = 'AudioMNIST', help='Dataset to use')
     parser.add_argument('--debug_mode', action='store_true', help='Run in debug mode. Stores outputs in deletable .pkl file')
+    parser.add_argument('--job_idx', type = int, default = None, help='Job idx for hpc batch job. Used to store output seperately for parallel jobs')
+    parser.add_argument('--job_name', type = str, default = None, help='Job name for hpc batch job. Used to create a folder to store seperate outputs in')
     # Explanation methods
     parser.add_argument('--use_FreqRISE', action='store_true', help=f'Explain with FreqRISE.')
     parser.add_argument('--use_SURL', action='store_true', help=f'Explain with SURL.')
@@ -134,6 +140,37 @@ if __name__ == '__main__':
     parser.add_argument('--decay', type = float, default = 0.9, help='weight of baseline towards loss for reinforce algorithm')
     
     args = parser.parse_args()    
+    
+    if args.job_idx and args.job_name:
+        jobarray_vals = [
+            {'u_FR':False,'u_S':False,'u_FS':False,'ns':10,'nm':150,'bs':10,'nc':10,'us':False,'ub':True,'lw':800,'lh':800,'pd':0.5,'lr':0.1,'a':1.0,'b':0.01,'d':0.9},
+            {'ds':'synthetic','u_FR':False,'u_S':False,'u_FS':False,'lt':'digit','nl':0.5,'ssl':50,'ns':10,'nm':150,'bs':10,'nc':10,'us':False,'ub':True,'lw':800,'lh':800,'pd':0.5,'lr':0.1,'a':1.0,'b':0.01,'d':0.9},
+            {'ds':'synthetic','u_FR':True,'u_S':False,'u_FS':False,'lt':'digit','nl':0.5,'ssl':50,'ns':10,'nm':150,'bs':10,'nc':10,'us':False,'ub':False,'lw':800,'lh':800,'pd':0.5,'lr':0.1,'a':1.0,'b':0.01,'d':0.9},
+            {'ds':'synthetic','u_FR':True,'u_S':True,'u_FS':True,'lt':'digit','nl':0.5,'ssl':50,'ns':10,'nm':150,'bs':10,'nc':10,'us':False,'ub':False,'lw':800,'lh':800,'pd':0.5,'lr':0.1,'a':1.0,'b':0.01,'d':0.9},
+            {'ds':'synthetic','u_FR':False,'u_S':True,'u_FS':False,'lt':'digit','nl':0.5,'ssl':50,'ns':10,'nm':150,'bs':10,'nc':10,'us':False,'ub':False,'lw':800,'lh':800,'pd':0.5,'lr':0.1,'a':1.0,'b':0.01,'d':0.9}
+        ]
+        job_vals = jobarray_vals[args.job_idx]
+        args.dataset =              job_vals['ds']
+        args.use_FreqRISE =         job_vals['u_FR']
+        args.use_SURL =             job_vals['u_S']
+        args.use_FiSURL =           job_vals['u_FS']
+        args.labeltype =            job_vals['lt']
+        args.noise_level =          job_vals['nl']
+        args.synth_sig_len =        job_vals['ssl']
+        args.n_samples =            job_vals['ns']
+        args.n_masks =              job_vals['nm']
+        args.batch_size =           job_vals['bs']
+        args.num_cells =            job_vals['nc']
+        args.use_softmax =          job_vals['us']
+        args.use_baselines =        job_vals['ub']
+        args.lrp_window =           job_vals['lw']
+        args.lrp_hop =              job_vals['lh']
+        args.probability_of_drop =  job_vals['pd']
+        args.lr =                   job_vals['lr']
+        args.alpha =                job_vals['a']
+        args.beta =                 job_vals['b']
+        args.decay =                job_vals['d']
+    
     if args.dataset == 'synthetic' and (args.use_FreqRISE or args.use_SURL or args.use_FiSURL):
         assert args.synth_sig_len > args.num_cells, "Number of cells should be lower than synth_sig_len if using synthetic dataset"
     main(args)

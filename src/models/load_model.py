@@ -14,10 +14,10 @@ def load_model(args):
             model = AudioNet(input_shape=(1, 8000), num_classes=10).eval()
             model.load_state_dict(torch.load(model_path, map_location=torch.device('cpu'), weights_only=False))
     elif args.dataset == 'synthetic':
-        model_path = f'{args.model_path}/synthetic_{args.noise_level}_{args.synth_sig_len}.pt'
+        model_path = f'{args.model_path}/synthetic_{args.noise_level}_{args.synth_sig_len}_{not args.no_random_peaks}.pt'
         if not os.path.exists(model_path):
             print("Synthetic model not found, training a new one...")
-            train_synthetic(1000, args.noise_level, args.synth_sig_len, args.model_path)
+            train_synthetic(1000, args.noise_level, args.synth_sig_len, 100, args.model_path, add_random_peaks=not args.no_random_peaks, seed=args.seed)
         model = LinearModel(input_size=args.synth_sig_len, hidden_layers=2, hidden_size=128, output_size=8)
         model.load_state_dict(torch.load(model_path, map_location=torch.device('cpu'), weights_only=False))
     model.eval()

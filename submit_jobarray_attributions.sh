@@ -6,6 +6,7 @@ merge_jobname="merge_${jobname}"
 
 dataset="synthetic"
 output_path="outputs"
+n_samples=10
 
 # If using AudioMNIST
 labeltype="digit" 
@@ -41,6 +42,7 @@ python main_attributions.py \\
     --noise_level $noise_level \\
     --synth_sig_len $synth_sig_len \\
     --labeltype $labeltype \\
+    --n_samples $n_samples \\
     --debug_mode
 EOF
 
@@ -77,6 +79,7 @@ python merge_outputs_from_jobarray.py \\
     --noise_level $noise_level \\
     --synth_sig_len $synth_sig_len \\
     --labeltype $labeltype \\
+    --n_samples $n_samples \\
     --debug_mode
 EOF
 

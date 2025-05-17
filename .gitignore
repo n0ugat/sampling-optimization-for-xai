@@ -2,6 +2,8 @@
 __pycache__/
 
 /data/
+/temp/
+/models/synthetic*
 outputs/signals/
 outputs/figures/
 outputs/hpclogs/

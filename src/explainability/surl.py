@@ -59,10 +59,6 @@ class SURL(nn.Module):
         p = []
         # cast data to frequency domain
         input_fft = tfft(input_data) 
-        print("input_data", input_data.device)
-        print("self.encoder", next(self.encoder.parameters()).device)
-        print("input_fft", input_fft.device)
-        breakpoint()
 
         mask_type = torch.complex64
         
@@ -83,11 +79,9 @@ class SURL(nn.Module):
             reward_list = []
             start_time = time.time()
 
-        for i in range(self.num_batches):
+        for _ in range(self.num_batches):
             masks, log_probs = m_policy() # Sample a batch of masks from the Bernoulli distribution
-            print("masks", masks.device)
-            print("log_probs", log_probs.device)
-            breakpoint()
+
             x_masks = input_fft*masks
             x_masks = tifft(x_masks, dim=-1)
 
@@ -97,12 +91,9 @@ class SURL(nn.Module):
                 if self.use_softmax:
                     predictions = torch.softmax(predictions, dim=-1)
 
-            rewards = []
             sals = torch.matmul(predictions.unsqueeze(2).float(), masks.abs().float()).transpose(1,2)
             p.append(sals)
-            print("predictions", predictions.device)
-            print("sals", sals.device)
-            breakpoint()
+
             # Faithfulness: how close is the masked prediction to original
             faithfulness_rewards = -torch.abs(pred_original[target_class] - predictions[:,target_class])
             # smaller difference = better
@@ -116,47 +107,38 @@ class SURL(nn.Module):
             mean_reward = rewards.mean()
             baseline = self.decay * baseline + (1 - self.decay) * mean_reward # Update the baseline
             loss = -((rewards - baseline) * log_probs).mean() # Reinforce loss, negative because we want to maximize the expected reward
-            print("faithfulness_rewards", faithfulness_rewards.device)
-            print("sparsity_penalties", sparsity_penalties.device)
-            print("rewards", rewards.device)
-            print("mean_reward", mean_reward.device)
-            print("baseline", baseline.device)
-            print("loss", loss.device)
-            breakpoint()
+
             optimizer.zero_grad() # Zero the gradients  
             loss.backward() # Backpropagation
             optimizer.step() # Update the policy network
 
-            params_saved.append(m_policy.logits[random_indices].tolist())
-            losses.append(loss.item())
-            for reward in rewards:
-                reward_list.append(reward.item())
+            if self.save_signals_path:
+                params_saved.append(m_policy.logits[random_indices].cpu().tolist())
+                losses.append(loss.cpu().item())
+                reward_list.append(mean_reward.cpu().item())
 
         importance = torch.cat(p, dim=0).sum(dim=0)/(self.num_batches*self.batch_size)
         # Selects the importance values for the given class y
-        print("importance 1", importance.device)
-        importance = importance.cpu().squeeze()[...,target_class]#/probability_of_drop
-        print("importance 2", importance.device)
+        importance = importance.squeeze()[...,target_class]#/probability_of_drop
         # min max normalize
         importance = (importance - importance.min()) / (importance.max() - importance.min())
-        run_time = time.time() - start_time
-        output_dict = {
-            'signal': input_data.squeeze(),
-            'signal_fft' : input_fft.squeeze(),
-            'signal_fft_re' : torch.abs(input_fft).squeeze(),
-            'target_class': target_class,
-            'prediction' : torch.argmax(pred_original),
-            'importance': importance,
-            'logged_params': params_saved,
-            'loss' : losses,
-            'rewards' : reward_list,
-            'run_time' : run_time,
-        }
-        sample_path = f'notebooks/samples/freqrise_dset_{self.dataset}_sm_{self.use_softmax}_batchsize_{self.batch_size}_numbatches_{self.num_batches}_lr_{self.lr}_alpha_{self.alpha}_beta_{self.beta}_decay_{self.decay}_numcells_{num_cells}'
-        os.makedirs(sample_path, exist_ok=True)
-        with open(f'{sample_path}/sample_idx_{idx}.pkl', mode='wb') as f:
-            pickle.dump(output_dict, f)
-        return importance # Importance here is the saliency map
+        if self.save_signals_path:
+            run_time = time.time() - start_time
+            output_dict = {
+                'signal': input_data.squeeze().cpu(),
+                'signal_fft' : torch.abs(input_fft).squeeze().cpu(),
+                'target_class': target_class.cpu(),
+                'prediction' : torch.argmax(pred_original).cpu(),
+                'importance': importance.cpu(),
+                'logged_params': params_saved,
+                'loss' : losses,
+                'rewards' : reward_list,
+                'run_time' : run_time,
+            }
+            sample_path = os.path.join(self.save_signals_path, f'sample_{idx}.pkl')
+            with open(sample_path, mode='wb') as f:
+                pickle.dump(output_dict, f)
+        return importance 
     
     def forward_dataloader(self, dataloader, num_cells):
         """
@@ -171,22 +153,22 @@ class SURL(nn.Module):
         Returns:
             list: The saliency maps of the input data. ??? (I don't know)
         """
-        freqrise_scores = [] # List to store the saliency maps ??? (I don't know)
+        freqrise_scores = [] 
         i = 0
             
-        for data, target in dataloader: # len(dataloader) = 1 ???
-            batch_scores = [] # List to store the saliency maps for the current batch ??? (I don't know)
+        for data, target in dataloader: 
+            batch_scores = [] 
             print("Computing batch", i+1, "/", len(dataloader))
-            j = 0
-            for sample, y in zip(data, target):
+            for j, (sample, y) in enumerate(zip(data, target)):
                 print("Computing sample", j+1, "/", len(data))
-                # sample has shape (1, 1, 8000) for AudioNet
+                sample = sample.to(self.device)
+                y = y.to(self.device)
+                
                 importance = self.forward(sample.float().squeeze(0), 
                                             target_class = y,
                                             num_cells = num_cells,
-                                            idx=j*i+j)
-                batch_scores.append(importance)
-                j+=1
+                                            idx=j)
+                batch_scores.append(importance.cpu())
             freqrise_scores.append(torch.stack(batch_scores))
             i+=1
         return freqrise_scores

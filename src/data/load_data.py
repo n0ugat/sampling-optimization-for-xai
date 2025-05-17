@@ -6,7 +6,7 @@ from src.data.dataloader import AudioNetDataset
 
 def load_data(args):
     if args.dataset == 'synthetic':
-        test_data, test_labels = synthetic_dataset_generator(args.n_samples, length=args.synth_sig_len, noiselevel=args.noise_level)
+        test_data, test_labels = synthetic_dataset_generator(args.n_samples, length=args.synth_sig_len, noiselevel=args.noise_level, add_random_peaks=not args.no_random_peaks, seed=None)
         test_data, test_labels = torch.tensor(test_data.reshape(args.n_samples, 1,1,-1)).float(), torch.tensor(test_labels).squeeze().long()
         test_loader = DataLoader(TensorDataset(test_data, test_labels.unsqueeze(0) if test_labels.dim() == 0 else test_labels), batch_size=64)
     elif args.dataset == 'AudioMNIST':

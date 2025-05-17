@@ -103,7 +103,7 @@ if __name__ == '__main__':
     male_speaker_sample_idx = "32"
     female_speaker_sample_idx = "41"
     
-    # plot_and_print_signal_from_path(male_speaker_idx, male_speaker_digit, male_speaker_sample_idx, "male")
-    # plot_and_print_signal_from_path(female_speaker_idx, female_speaker_digit, female_speaker_sample_idx, "female")
+    plot_and_print_signal_from_path(male_speaker_idx, male_speaker_digit, male_speaker_sample_idx, "male")
+    plot_and_print_signal_from_path(female_speaker_idx, female_speaker_digit, female_speaker_sample_idx, "female")
     
     plot_synthetic_signal()

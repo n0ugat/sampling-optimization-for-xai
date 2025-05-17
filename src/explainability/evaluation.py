@@ -7,13 +7,13 @@ from src.data.generators import powerset
 from src.lrp import dft_lrp
 from src.lrp import lrp_utils
 
-def deletion_curves(model, test_loader, importance, quantiles, domain = 'fft', device = 'cpu', stft_params = None, cutoff = None, filterbank = None):
+def deletion_curves(model, test_loader, importance, quantiles, device = 'cpu', cutoff = None, filterbank = None, method_name = ''):
     deletion = {
         'mean_prob': [],
         'quantiles': quantiles
     }
     for quantile in quantiles:
-        mean_true_class_prob = mask_and_predict(model, test_loader, importance, quantile, domain = domain, device = device, stft_params = stft_params, cutoff = cutoff, filterbank = filterbank)
+        mean_true_class_prob = mask_and_predict(model, test_loader, importance, quantile, device = device, cutoff = cutoff, filterbank = filterbank, method_name = method_name)
         deletion['mean_prob'].append(mean_true_class_prob)
     auc = np.trapz(deletion['mean_prob'], deletion['quantiles'])
     deletion['AUC'] = auc
@@ -25,7 +25,7 @@ def complexity_scores(attributions, cutoff = None, only_pos = False):
     for i, sample in enumerate(attributions):
         if only_pos:
             sample[sample < 0] = 0
-        sample = (sample - np.min(sample))/(np.max(sample) - np.min(sample))
+        sample = (sample - np.min(sample))/(np.max(sample) - np.min(sample) + 1e-8) + 1e-8
         if cutoff is not None:
             cut = np.quantile(sample, cutoff)
             sample[sample < cut] = 0
@@ -53,38 +53,24 @@ def localization_scores(attributions, labels, cutoff = None, only_pos = False):
     return loc_scores
 
 
-def mask_and_predict(model, test_loader, importance, quantile, domain = 'fft', device = 'cpu', stft_params = None, cutoff = None, filterbank = None):
+def mask_and_predict(model, test_loader, importance, quantile, device = 'cpu', cutoff = None, filterbank = None, method_name = ''):
     model.eval().to(device)
     with torch.no_grad():
-        correct = 0
         total = 0
-        ce_loss = 0
         mean_true_class_prob = 0
         for i, batch in enumerate(test_loader):
             data, true_label = batch
-            if domain == 'fft':
-                data = torch.fft.rfft(data, dim=-1).to(device)
-            elif domain == 'stft':
-                data_shape = data.shape
-                data = torch.stft(data.squeeze().to(device), **stft_params, return_complex = True)
-            else:
-                data = data.to(device)
+            data = torch.fft.rfft(data, dim=-1).to(device)
             shape = data.shape
             if importance == 'random':
-                imp = torch.rand_like(data).float()
+                imp = torch.rand_like(data.abs()).float()
             elif importance == 'amplitude':
                 imp = torch.abs(data)
             else:
-                if domain in ['fft', 'time']:
-                    if filterbank is not None:
-                        breakpoint()
-                        data = filterbank.batch_apply(data) # Shape: (test_batch_size, num_banks, 1, 1, fs)
-                        breakpoint()
-                    else:
-                        imp = importance[i].reshape(-1, 1, 1, data.shape[-1])
+                if filterbank is not None:
+                    data = filterbank.batch_apply(data) # Shape: (test_batch_size, num_banks, 1, 1, fs)
                 else:
-                    imp = importance[i].squeeze()
-                breakpoint()
+                    imp = importance[i].reshape(-1, 1, 1, data.shape[-1])
                 imp[imp < 0] = 0
             if cutoff is not None:
                 if cutoff == 'mean':
@@ -111,11 +97,7 @@ def mask_and_predict(model, test_loader, importance, quantile, domain = 'fft', d
             mask = mask.view(shape).to(device)
             data = data * (~mask)
 
-            if domain == 'fft':
-                data = torch.fft.irfft(data, dim=-1)
-            elif domain == 'stft':
-                data = torch.istft(data, length = data_shape[-1], **stft_params, return_complex = False)
-                data = data.view(data_shape)
+            data = torch.fft.irfft(data, dim=-1)
             output = model(data.float()).detach().cpu()
             total += true_label.size(0)
             # one hot encode true label
@@ -123,46 +105,21 @@ def mask_and_predict(model, test_loader, importance, quantile, domain = 'fft', d
 
     return mean_true_class_prob / total
 
-def compute_gradient_scores(model, testloader, attr_method, domain = 'fft', stft_params = None):
+def compute_gradient_scores(model, testloader, attr_method):
     lrp_scores = []
     for sample, target in testloader:
-        if domain == 'stft':
-            cuda = False
-        else:
-            cuda = torch.cuda.is_available()
+        cuda = torch.cuda.is_available()
         if cuda:
             sample = sample.cuda()
             model = model.cuda()
         relevance_time = lrp_utils.zennit_relevance(sample.float(), model, target=target, attribution_method=attr_method, cuda=cuda)
-        if domain == 'fft':
-            dftlrp = dft_lrp.DFTLRP(sample.shape[-1], 
-                                    leverage_symmetry=True, 
-                                    precision=32,
-                                    cuda = cuda,
-                                    create_stdft=False,
-                                    create_inverse=False
-                                    )
-            signal_freq, relevance_freq = dftlrp.dft_lrp(relevance_time, sample.float(), real=False, short_time=False)
-            lrp_scores.append(torch.tensor(relevance_freq))
-        elif domain == 'stft':
-            relevance_freq = lrp_stft(relevance_time, sample, stft_params['n_fft'], cuda)
-            lrp_scores.append(torch.tensor(relevance_freq))
-        else:
-            lrp_scores.append(torch.tensor(relevance_time))
+        dftlrp = dft_lrp.DFTLRP(sample.shape[-1], 
+                                leverage_symmetry=True, 
+                                precision=32,
+                                cuda = cuda,
+                                create_stdft=False,
+                                create_inverse=False
+                                )
+        signal_freq, relevance_freq = dftlrp.dft_lrp(relevance_time, sample.float(), real=False, short_time=False)
+        lrp_scores.append(torch.tensor(relevance_freq))
     return lrp_scores
-
-
-def lrp_stft(relevance_time, sample, window_length, cuda):
-    dftlrp = dft_lrp.DFTLRP(window_length, 
-                            leverage_symmetry=True, 
-                            precision=32,
-                            cuda = cuda,
-                            create_stdft=False,
-                            create_inverse=False
-                            )
-    freq_relevance = np.zeros((sample.shape[0], window_length//2+1, sample.shape[-1]//window_length))
-
-    for i in range(sample.shape[-1]//window_length):
-        signal_freq, relevance_freq = dftlrp.dft_lrp(relevance_time[...,i*window_length:(i+1)*window_length], sample[...,i*window_length:(i+1)*window_length].float(), real=False, short_time=False)
-        freq_relevance[...,i] = relevance_freq[:,0,0,:]
-    return freq_relevance

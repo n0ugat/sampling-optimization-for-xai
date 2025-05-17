@@ -18,9 +18,10 @@ def main(args):
     print(f'Using device: {device}')
     
     if args.dataset == 'synthetic':
-        output_path = f'{args.output_path}/{args.dataset}_attributions_{args.noise_level}_{args.synth_sig_len}.pkl'
+        output_path = f'{args.output_path}/{args.dataset}_attributions_{args.noise_level}_{args.synth_sig_len}_{not args.no_random_peaks}.pkl'
     elif args.dataset == 'AudioMNIST':
         output_path = f'{args.output_path}/{args.dataset}_attributions_{args.labeltype}.pkl'
+    output_path = output_path.replace('.pkl', f'_{args.n_samples}.pkl')
     if args.debug_mode:
         output_path = output_path.replace('.pkl', '_debug.pkl')
     if args.job_name:
@@ -40,22 +41,21 @@ def main(args):
     random_ID = ''.join(random.choices(chars, k=8))
 
     ## Compute baseline attributions
-    lrp_stft_args = {'n_fft': args.lrp_window, 'hop_length': args.lrp_hop, 'center': False}
     if args.use_baselines:
         if not 'saliency' in attributions:
             # compute saliency
             print('Computing saliency')
-            attributions['saliency'] = compute_gradient_scores(model, test_loader, attr_method = 'gxi', domain = 'fft', stft_params = lrp_stft_args)
+            attributions['saliency'] = compute_gradient_scores(model, test_loader, attr_method = 'gxi')
             print('Saliency computed')
         if not 'lrp' in attributions:
             # compute LRP
             print('Computing LRP')
-            attributions['lrp'] = compute_gradient_scores(model, test_loader, attr_method = 'lrp', domain = 'fft', stft_params = lrp_stft_args)
+            attributions['lrp'] = compute_gradient_scores(model, test_loader, attr_method = 'lrp')
             print('LRP computed')
         if not 'IG' in attributions:
             # compute integrated gradients
             print('Computing IG')
-            attributions['IG'] = compute_gradient_scores(model, test_loader, attr_method = 'ig', domain = 'fft', stft_params = lrp_stft_args)
+            attributions['IG'] = compute_gradient_scores(model, test_loader, attr_method = 'ig')
             print('IG computed')
     
     
@@ -65,7 +65,7 @@ def main(args):
     
     # FreqRISE
     freqrise_filename = 'freqrise' + filename_start + f'_dropprob_{args.probability_of_drop}'
-    if args.use_FreqRISE and not freqrise_filename in attributions:
+    if args.use_FreqRISE and (not freqrise_filename in attributions or args.debug_mode):
         # compute FreqRISE
         print('Creating FreqRISE')
         freqrise = FreqRISE(model, batch_size=args.batch_size, num_batches=num_batches, device=device, use_softmax=args.use_softmax)
@@ -75,7 +75,7 @@ def main(args):
     
     # SURL
     surl_filename = 'surl' + filename_start + f'_lr_{args.lr}_alpha_{args.alpha}_beta_{args.beta}_decay_{args.decay}'
-    if args.use_SURL and not surl_filename in attributions:
+    if args.use_SURL and (not surl_filename in attributions or args.debug_mode):
         # compute FreqRISE
         print('Creating SURL')
         random_ID_dir = None
@@ -107,7 +107,7 @@ def main(args):
         
     # FiSURL
     fisurl_filename = 'fisurl' + filename_start + f'_lr_{args.lr}_alpha_{args.alpha}_beta_{args.beta}_decay_{args.decay}'
-    if args.use_FiSURL and not fisurl_filename in attributions:
+    if args.use_FiSURL and (not fisurl_filename in attributions or args.debug_mode):
         print('FiSURL not implemented yet')
 
     # get predictions and labels
@@ -136,7 +136,7 @@ if __name__ == '__main__':
     parser.add_argument('--data_path', type = str, default = 'data/', help='Path to AudioMNIST data')
     parser.add_argument('--model_path', type = str, default = 'models', help='Path to models folder')
     parser.add_argument('--output_path', type = str, default = 'outputs', help='Path to save output')
-    parser.add_argument('--dataset', type = str, default = 'AudioMNIST', help='Dataset to use')
+    parser.add_argument('--dataset', type = str, default = 'AudioMNIST', choices=['AudioMNIST', 'synthetic'], help='Dataset to use')
     parser.add_argument('--debug_mode', action='store_true', help='Run in debug mode. Stores outputs in deletable .pkl file')
     parser.add_argument('--job_idx', type = int, default = None, help='Job idx for hpc batch job. Used to store output seperately for parallel jobs')
     parser.add_argument('--job_name', type = str, default = None, help='Job name for hpc batch job. Used to create a folder to store seperate outputs in')
@@ -146,10 +146,12 @@ if __name__ == '__main__':
     parser.add_argument('--use_SURL', action='store_true', help=f'Explain with SURL.')
     parser.add_argument('--use_FiSURL', action='store_true', help=f'Explain with FiSURL.')
     # AudioMNIST
-    parser.add_argument('--labeltype', type = str, default = 'digit', help='Type of label to use for AudioMNIST')
+    parser.add_argument('--labeltype', type = str, default = 'digit', choices=['gender', 'digit'], help='Type of label to use for AudioMNIST')
     # Synthetic
-    parser.add_argument('--noise_level', type = float, default = 0.5, help='Noise level for synthetic dataset. Either 0.8 or 0.01.')
+    parser.add_argument('--noise_level', type = float, default = 0, help='Noise level for synthetic dataset. Either 0.8 or 0.01.')
     parser.add_argument('--synth_sig_len', type = int, default = 50, help='Length of the synthetic signals.')
+    parser.add_argument('--no_random_peaks', action='store_true', help='Add random peaks to the signals')
+    parser.add_argument('--seed', type = int, default = 42, help='Seed for random number generator')
     # hyperparams
     parser.add_argument('--n_samples', type = int, default = 10, help='Number of samples to compute attributions for')
     parser.add_argument('--n_masks', type = int, default = 3000, help='Number of samples to use to compute FreqRISE')
@@ -158,8 +160,6 @@ if __name__ == '__main__':
     parser.add_argument('--use_softmax', action='store_true', help='use softmax for FreqRISE')
     # Baselines
     parser.add_argument('--use_baselines', action='store_true', help='Run baseline models')
-    parser.add_argument('--lrp_window', type = int, default = 800, help='Window size for LRP')
-    parser.add_argument('--lrp_hop', type = int, default = 800, help='Hop size for LRP')
     # FreqRISE
     parser.add_argument('--probability_of_drop', type = float, default = 0.5, help='Probability of dropping')
     # Reinforce
@@ -172,25 +172,22 @@ if __name__ == '__main__':
     
     if args.job_idx and args.job_name:
         jobarray_vals = [
-            {'u_FR':False,'u_S':False,'u_FS':False,'ns':10,'nm':150,'bs':10,'nc':10,'us':False,'ub':True,'lw':800,'lh':800,'pd':0.5,'lr':0.1,'a':1.0,'b':0.01,'d':0.9},
-            {'u_FR':False,'u_S':False,'u_FS':False,'ns':10,'nm':150,'bs':10,'nc':10,'us':False,'ub':True,'lw':800,'lh':800,'pd':0.5,'lr':0.1,'a':1.0,'b':0.01,'d':0.9},
-            {'u_FR':True,'u_S':False,'u_FS':False,'ns':10,'nm':150,'bs':10,'nc':10,'us':False,'ub':False,'lw':800,'lh':800,'pd':0.5,'lr':0.1,'a':1.0,'b':0.01,'d':0.9},
-            {'u_FR':True,'u_S':True,'u_FS':True,'ns':10,'nm':150,'bs':10,'nc':10,'us':False,'ub':False,'lw':800,'lh':800,'pd':0.5,'lr':0.1,'a':1.0,'b':0.01,'d':0.9},
-            {'u_FR':False,'u_S':True,'u_FS':False,'ns':10,'nm':150,'bs':10,'nc':10,'us':False,'ub':False,'lw':800,'lh':800,'pd':0.5,'lr':0.1,'a':1.0,'b':0.01,'d':0.9}
+            {'u_FR':False,'u_S':False,'u_FS':False,'nm':150,'bs':10,'nc':10,'us':False,'ub':True,'pd':0.5,'lr':0.1,'a':1.0,'b':0.01,'d':0.9},
+            {'u_FR':False,'u_S':False,'u_FS':False,'nm':150,'bs':10,'nc':10,'us':False,'ub':True,'pd':0.5,'lr':0.1,'a':1.0,'b':0.01,'d':0.9},
+            {'u_FR':True,'u_S':False,'u_FS':False,'nm':150,'bs':10,'nc':10,'us':False,'ub':False,'pd':0.5,'lr':0.1,'a':1.0,'b':0.01,'d':0.9},
+            {'u_FR':True,'u_S':True,'u_FS':True,'nm':150,'bs':10,'nc':10,'us':False,'ub':False,'pd':0.5,'lr':0.1,'a':1.0,'b':0.01,'d':0.9},
+            {'u_FR':False,'u_S':True,'u_FS':False,'nm':150,'bs':10,'nc':10,'us':False,'ub':False,'pd':0.5,'lr':0.1,'a':1.0,'b':0.01,'d':0.9}
         ]
         
         job_vals = jobarray_vals[args.job_idx]
         args.use_FreqRISE =         job_vals['u_FR']
         args.use_SURL =             job_vals['u_S']
         args.use_FiSURL =           job_vals['u_FS']
-        args.n_samples =            job_vals['ns']
         args.n_masks =              job_vals['nm']
         args.batch_size =           job_vals['bs']
         args.num_cells =            job_vals['nc']
         args.use_softmax =          job_vals['us']
         args.use_baselines =        job_vals['ub']
-        args.lrp_window =           job_vals['lw']
-        args.lrp_hop =              job_vals['lh']
         args.probability_of_drop =  job_vals['pd']
         args.lr =                   job_vals['lr']
         args.alpha =                job_vals['a']

@@ -9,9 +9,9 @@ from torch.utils.data import DataLoader, TensorDataset
 from src.data import synthetic_dataset_generator
 from src.models import LinearModel
 
-def train_synthetic(n_samples, noise_level, synth_sig_len, model_path):
+def train_synthetic(n_samples, noise_level, synth_sig_len, epochs=100, model_path="models", add_random_peaks=True, seed=42):
     print('Generating dataset')
-    signals, labels = synthetic_dataset_generator(n_samples, length=synth_sig_len, noiselevel=noise_level, seed=None)
+    signals, labels = synthetic_dataset_generator(n_samples, length=synth_sig_len, noiselevel=noise_level, add_random_peaks=add_random_peaks, seed=seed)
     print('Dataset generated')
     print('Creating dataloaders')
     signals, labels = torch.tensor(signals).float(), torch.tensor(labels).long()
@@ -32,7 +32,7 @@ def train_synthetic(n_samples, noise_level, synth_sig_len, model_path):
     optimizer = optim.Adam(model.parameters(), lr=0.001)
 
     # Training loop
-    epochs = 10
+    epochs = epochs
     collect_train_accuracy = []
     collect_train_loss = []
     collect_val_accuracy = []
@@ -77,7 +77,7 @@ def train_synthetic(n_samples, noise_level, synth_sig_len, model_path):
         
         print(f"Epoch {epoch} train Loss: {epoch_train_loss}", end=", ")
         print(f"Epoch {epoch} val Loss: {epoch_val_loss}", end=", ")
-        print(f"Train Accuracy: {collect_train_accuracy[-1]}")
+        print(f"Train Accuracy: {collect_train_accuracy[-1]}", end=", ")
         print(f"Validation Accuracy: {collect_val_accuracy[-1]}")
     
     print('Model trained')
@@ -102,13 +102,16 @@ def train_synthetic(n_samples, noise_level, synth_sig_len, model_path):
     plt.close()
     
     # Save the model
-    torch.save(model.state_dict(), f'{model_path}/synthetic_{noise_level}_{synth_sig_len}.pt')
+    torch.save(model.state_dict(), f'{model_path}/synthetic_{noise_level}_{synth_sig_len}_{add_random_peaks}.pt')
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('--model_path', type = str, default = 'models', help='Path to save model')
     parser.add_argument('--n_samples', type = int, default = 1000, help='Number of samples to generate')
     parser.add_argument('--noise_level', type = float, default = 0.5, help='Noise in dataset')
     parser.add_argument('--synth_sig_len', type = int, default = 50, help='Length of the synthetic signals.')
+    parser.add_argument('--no_random_peaks', action='store_true', help='Add random peaks to the signals')
+    parser.add_argument('--seed', type = int, default = 42, help='Seed for random number generator')
+    parser.add_argument('--epochs', type = int, default = 100, help='Number of epochs to train for')
 
     args = parser.parse_args()
-    train_synthetic(args.n_samples, args.noise_level, args.synth_sig_len, args.model_path)
+    train_synthetic(args.n_samples, args.noise_level, args.synth_sig_len, args.epochs, args.model_path, not args.no_random_peaks, args.seed)

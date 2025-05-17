@@ -25,7 +25,7 @@ class FiSURL(nn.Module): # FiSURL: Filterbank Sampling Using Reinforcement Learn
                 use_softmax = False,
                 use_rl: bool = True,
                 # rl_params: dict = {'lr': 1e-4, 'alpha': 1.00, 'beta': 0.01, 'decay': 0.9, 'reward_fn': 'pred'},
-                rl_params: dict = {'lr': 0.05, 'alpha': 1.00, 'beta': 0.05, 'decay': 0.9, 'reward_fn': 'pred'}
+                rl_params: dict = {'lr': 0.05, 'alpha': 1.00, 'beta': 0.05, 'decay': 0.9}
                 ):
 
         super().__init__()
@@ -54,32 +54,6 @@ class FiSURL(nn.Module): # FiSURL: Filterbank Sampling Using Reinforcement Learn
         self.alpha = rl_params['alpha']
         self.beta = rl_params['beta']
         self.decay = rl_params['decay']
-        self.reward_fn = rl_params['reward_fn']
-
-    def reward_fn_saliency(self, saliency, mask):
-        """
-        Reward = saliency score from masked input - penalty for mask size
-        """
-        sal_score = saliency.mean() # Sum saliency: higher is better
-        mask_size = mask.abs().mean() # Penalize large mask
-        reward = self.alpha * sal_score - self.beta * mask_size
-        return reward
-        
-    def reward_fn_pred(self, pred_original, pred_masked, mask, target_class):
-        """
-        Reward = classification faithfulness - penalty for mask size
-        """
-        # Faithfulness: how close is the masked prediction to original
-        pred_diff = torch.abs(pred_original[target_class] - pred_masked[target_class])
-        faithfulness_reward = -pred_diff  # smaller difference = better
-
-        # Sparsity: fewer active frequencies = better
-        mask_size = mask.abs().mean()
-        # sparsity_penalty = mask_size  # encourage fewer active cells
-        sparsity_penalty = torch.max(mask_size - torch.tensor(self.keep_ratio).to(self.device), torch.tensor(0.).to(self.device))
-
-        reward = self.alpha * faithfulness_reward - self.beta * sparsity_penalty
-        return reward
 
     def forward(self, input_data, target_class, mask_generator, **kwargs):
         saliencies = []
@@ -119,27 +93,20 @@ class FiSURL(nn.Module): # FiSURL: Filterbank Sampling Using Reinforcement Learn
                         predictions = torch.softmax(predictions, dim=1)
 
                 rewards = []
+                sals = torch.matmul(predictions.transpose(0,1).float(), masks.view(self.batch_size, -1).abs().float()).transpose(0,1).unsqueeze(0).cpu() # Compute saliency
+                saliencies.append(sals)
+                # Faithfulness: how close is the masked prediction to original
+                pred_diffs = torch.abs(pred_original[target_class] - predictions[:,target_class])
+                faithfulness_rewards = -pred_diffs  # smaller difference = better
 
-                for mask, pred_masked in zip(masks, predictions):
-                    breakpoint()
-                    # sal = torch.matmul(pred_masked.unsqueeze(0).transpose(0,1).float(), mask.abs().float()).transpose(0,1).unsqueeze(0) # Saliency computation from SURL
-                    # Shape of mask
-                    # Shape of predictions.transpose(0,1): (num_classes, batch_size)
-                    # Shape of masks.view(self.batch_size, -1).abs(): (batch_size, num_banks)
-                    # Shape of sal: (1, num_classes, batch_size)
-                    sal = torch.matmul(predictions.transpose(0,1).float(), masks.view(self.batch_size, -1).abs().float()).transpose(0,1).unsqueeze(0).cpu() # Compute saliency
-                    saliencies.append(sal)
-                    if self.reward_fn == "pred":
-                        reward = self.reward_fn_pred(pred_original, pred_masked, mask, target_class) # Compute the reward using the saliency and the masks
-                    elif self.reward_fn == "saliency":
-                        reward = self.reward_fn_saliency(sal, mask) # Compute the reward using the saliency and the masks
-                    else:
-                        raise ValueError("Invalid reward function")
-                    rewards.append(reward) # Append the reward to the list
+                # Sparsity: fewer active frequencies = better
+                mask_sizes = masks.abs().mean(dim=-1).squeeze()
+                # sparsity_penalties = mask_sizes  # encourage fewer active cells
+                sparsity_penalties = torch.max(mask_sizes - torch.tensor(self.keep_ratio).to(self.device), torch.zeros(50).to(self.device))
 
-                rewards = torch.stack(rewards).to(self.device)
+                rewards = (self.alpha * faithfulness_rewards - self.beta * sparsity_penalties).to(self.device)
+
                 mean_reward = rewards.mean()
-
                 baseline = self.decay * baseline + (1 - self.decay) * mean_reward # Update the baseline
                 loss = -((rewards - baseline) * log_probs).mean() # Reinforce loss, negative because we want to maximize the expected reward
 
@@ -149,7 +116,8 @@ class FiSURL(nn.Module): # FiSURL: Filterbank Sampling Using Reinforcement Learn
 
                 params_saved.append(m_policy.logits[random_indices].tolist())
                 losses.append(loss.item())
-                reward_list.append(reward.item())
+                for reward in rewards:
+                    reward_list.append(reward.item())
 
             else:
                 # Generate a batch of masks
@@ -186,8 +154,8 @@ class FiSURL(nn.Module): # FiSURL: Filterbank Sampling Using Reinforcement Learn
                 'rewards' : reward_list,
                 'run_time' : run_time
             }
-            os.makedirs(f'notebooks/samples/fisurl_sm_{self.use_softmax}_batchsize_{self.batch_size}_numbatches_{self.num_batches}_R_{self.reward_fn}_lr_{self.lr}_alpha_{self.alpha}_beta_{self.beta}_decay_{self.decay}_numbanks_{self.num_banks}', exist_ok=True)
-            with open(f'notebooks/samples/fisurl_sm_{self.use_softmax}_batchsize_{self.batch_size}_numbatches_{self.num_batches}_R_{self.reward_fn}_lr_{self.lr}_alpha_{self.alpha}_beta_{self.beta}_decay_{self.decay}_numbanks_{self.num_banks}/sample_idx_{kwargs.get('idx')}.pkl', mode='wb') as f:
+            os.makedirs(f'notebooks/samples/fisurl_sm_{self.use_softmax}_batchsize_{self.batch_size}_numbatches_{self.num_batches}_lr_{self.lr}_alpha_{self.alpha}_beta_{self.beta}_decay_{self.decay}_numbanks_{self.num_banks}', exist_ok=True)
+            with open(f'notebooks/samples/fisurl_sm_{self.use_softmax}_batchsize_{self.batch_size}_numbatches_{self.num_batches}_lr_{self.lr}_alpha_{self.alpha}_beta_{self.beta}_decay_{self.decay}_numbanks_{self.num_banks}/sample_idx_{kwargs.get('idx')}.pkl', mode='wb') as f:
                 pickle.dump(output_dict, f)
         
         return importance

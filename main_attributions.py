@@ -5,7 +5,7 @@ import os
 import random
 import string
 
-from src.explainability import FreqRISE, SURL, compute_gradient_scores
+from src.explainability import FreqRISE, FiSURL, SURL, compute_gradient_scores
 from src.data import load_data
 from src.models import load_model
 
@@ -14,7 +14,8 @@ def main(args):
     test_loader = load_data(args)
     print('Loading model')
     model = load_model(args)
-    device = 'cuda' if torch.cuda.is_available() else 'mps' if torch.backends.mps.is_available() and torch.backends.mps.is_built() else 'cpu'
+    # device = 'cuda' if torch.cuda.is_available() else 'mps' if torch.backends.mps.is_available() and torch.backends.mps.is_built() else 'cpu'
+    device = 'cuda' if torch.cuda.is_available() else 'cpu'
     print(f'Using device: {device}')
     
     if args.dataset == 'synthetic':
@@ -42,17 +43,17 @@ def main(args):
 
     ## Compute baseline attributions
     if args.use_baselines:
-        if not 'saliency' in attributions:
+        if not 'saliency' in attributions or args.debug_mode:
             # compute saliency
             print('Computing saliency')
             attributions['saliency'] = compute_gradient_scores(model, test_loader, attr_method = 'gxi')
             print('Saliency computed')
-        if not 'lrp' in attributions:
+        if not 'lrp' in attributions or args.debug_mode:
             # compute LRP
             print('Computing LRP')
             attributions['lrp'] = compute_gradient_scores(model, test_loader, attr_method = 'lrp')
             print('LRP computed')
-        if not 'IG' in attributions:
+        if not 'IG' in attributions or args.debug_mode:
             # compute integrated gradients
             print('Computing IG')
             attributions['IG'] = compute_gradient_scores(model, test_loader, attr_method = 'ig')
@@ -96,7 +97,7 @@ def main(args):
     # SURL
     surl_filename = 'surl' + filename_start + f'_lr_{args.lr}_alpha_{args.alpha}_beta_{args.beta}_decay_{args.decay}'
     if args.use_SURL and (not surl_filename in attributions or args.debug_mode):
-        # compute FreqRISE
+        # compute SURL
         print('Creating SURL')
         random_ID_dir = None
         if args.save_signals:
@@ -120,15 +121,42 @@ def main(args):
                 meta_file.write(f'Alpha: {args.alpha}\n')
                 meta_file.write(f'Beta: {args.beta}\n')
                 meta_file.write(f'Decay: {args.decay}')
-        freqrise = SURL(model, batch_size=args.batch_size, num_batches=num_batches, device=device, use_softmax=args.use_softmax, lr=args.lr, alpha=args.alpha, beta=args.beta, decay=args.decay, dataset=args.dataset, save_signals_path=random_ID_dir)
+        surl = SURL(model, batch_size=args.batch_size, num_batches=num_batches, device=device, use_softmax=args.use_softmax, lr=args.lr, alpha=args.alpha, beta=args.beta, decay=args.decay, save_signals_path=random_ID_dir)
         print('Computing SURL')
-        attributions[surl_filename] = freqrise.forward_dataloader(test_loader, args.num_cells)
+        attributions[surl_filename] = surl.forward_dataloader(test_loader, args.num_cells)
         print('SURL computed')
         
     # FiSURL
     fisurl_filename = 'fisurl' + filename_start + f'_lr_{args.lr}_alpha_{args.alpha}_beta_{args.beta}_decay_{args.decay}'
     if args.use_FiSURL and (not fisurl_filename in attributions or args.debug_mode):
-        print('FiSURL not implemented yet')
+        # compute FiSURL
+        print('Creating FiSURL')
+        random_ID_dir = None
+        if args.save_signals:
+            # Save metadata to a txt file
+            random_ID_dir = os.path.join(args.output_path, 'samples', f'{random_ID}{'_debug' if args.debug_mode else ''}', 'fisurl')
+            os.makedirs(random_ID_dir, exist_ok=True)
+            with open(os.path.join(random_ID_dir, f'metadata_{random_ID}.txt'), 'w') as meta_file:
+                meta_file.write(f'Metadata for FiSURL. ID: {random_ID}\n')
+                meta_file.write(f'Dataset: {args.dataset}\n')
+                if args.dataset == 'AudioMNIST':
+                    meta_file.write(f'Label Type: {args.labeltype}\n')
+                elif args.dataset == 'synthetic':
+                    meta_file.write(f'Noise Level: {args.noise_level}\n')
+                    meta_file.write(f'Synthetic Signal Length: {args.synth_sig_len}\n')
+                meta_file.write(f'Num Samples: {args.n_samples}\n')
+                meta_file.write(f'Num Masks: {args.n_masks}\n')
+                meta_file.write(f'Batch Size: {args.batch_size}\n')
+                meta_file.write(f'Num Banks: {args.num_banks}\n')
+                meta_file.write(f'Use Softmax: {args.use_softmax}\n')
+                meta_file.write(f'Learning Rate: {args.lr}\n')
+                meta_file.write(f'Alpha: {args.alpha}\n')
+                meta_file.write(f'Beta: {args.beta}\n')
+                meta_file.write(f'Decay: {args.decay}\n')
+        fisurl = FiSURL(model, num_taps=args.num_taps, num_banks=args.num_banks, fs=args.fs, bandwidth=args.bandwidth, batch_size=args.batch_size, num_batches=num_batches, keep_ratio=args.keep_ratio, device=device, use_softmax=args.use_softmax, lr=args.lr, alpha=args.alpha, beta=args.beta, decay=args.decay, save_signals_path=random_ID_dir)
+        print('Computing FiSURL')
+        attributions[fisurl_filename] = fisurl.forward_dataloader(test_loader)
+        print('FiSURL computed')
 
     # get predictions and labels
     if not 'predictions' in attributions:
@@ -187,6 +215,12 @@ if __name__ == '__main__':
     parser.add_argument('--alpha', type = float, default = 1.0, help='Weight of primary reward towards loss for reinforce algorithm')
     parser.add_argument('--beta', type = float, default = 0.01, help='Weight of mask size towards loss for reinforce algorithm')
     parser.add_argument('--decay', type = float, default = 0.9, help='weight of baseline towards loss for reinforce algorithm')
+    # FiSURL
+    parser.add_argument('--num_banks', type = int, default = 128, help='Number of banks to use for FiSURL')
+    parser.add_argument('--num_taps', type = int, default = 501, help='Number of taps to use for FiSURL')
+    parser.add_argument('--fs', type = int, default = 8000, help='Sampling frequency to use for FiSURL')
+    parser.add_argument('--bandwidth', type = float, default = None, help='Bandwidth to use for FiSURL')
+    parser.add_argument('--keep_ratio', type = float, default = 0.05, help='Ratio parameter below which the sparsity constraint is ignored for FiSURL')
     
     args = parser.parse_args()    
     

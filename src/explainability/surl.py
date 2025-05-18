@@ -21,7 +21,6 @@ class SURL(nn.Module):
                  alpha=1.00,
                  beta=0.01,
                  decay=0.9,
-                 dataset = "AudioMNIST",
                  save_signals_path = None
                  ):
 
@@ -33,7 +32,6 @@ class SURL(nn.Module):
         self.alpha=alpha
         self.beta=beta
         self.decay=decay
-        self.dataset = dataset
         self.save_signals_path = save_signals_path
 
         self.num_batches = num_batches
@@ -42,7 +40,7 @@ class SURL(nn.Module):
         self.encoder = encoder.eval().to(self.device) # function that evaluates the pretrained model on a given input
 
 
-    def forward(self, input_data, target_class, num_cells, idx) -> None:
+    def forward(self, input_data, target_class, num_cells, idx):
         """
         Compute the saliency map of the input data using FreqRISE.
         Args:
@@ -142,7 +140,7 @@ class SURL(nn.Module):
     
     def forward_dataloader(self, dataloader, num_cells):
         """
-        Compute the saliency map of the input data using FreqRISE for a given dataloader.
+        Compute the saliency map of the input data using SURL for a given dataloader.
         Args:
             dataloader: torch.utils.data.DataLoader
                 The dataloader containing the input data for which to compute the saliency map.
@@ -153,7 +151,7 @@ class SURL(nn.Module):
         Returns:
             list: The saliency maps of the input data. ??? (I don't know)
         """
-        freqrise_scores = [] 
+        surl_scores = [] 
         i = 0
             
         for data, target in dataloader: 
@@ -169,6 +167,6 @@ class SURL(nn.Module):
                                             num_cells = num_cells,
                                             idx=j)
                 batch_scores.append(importance.cpu())
-            freqrise_scores.append(torch.stack(batch_scores))
+            surl_scores.append(torch.stack(batch_scores))
             i+=1
-        return freqrise_scores
+        return surl_scores

@@ -8,6 +8,7 @@ outputs/signals/
 outputs/figures/
 outputs/hpclogs/
 outputs/samples/
+outputs/evaluation_scores/
 notebooks/samples/
 
 submit.sh

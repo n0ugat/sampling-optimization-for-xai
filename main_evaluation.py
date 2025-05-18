@@ -111,7 +111,7 @@ if __name__ == '__main__':
     parser.add_argument('--data_path', type = str, default = 'data/', help='Path to AudioMNIST data')
     parser.add_argument('--output_path', type = str, default = 'outputs', help='Path to save output')
     parser.add_argument('--dataset', type = str, default = 'AudioMNIST', choices=['AudioMNIST', 'synthetic'], help='Dataset to use')
-    parser.add_argument('--debug_mode', action='store_true', help='Run in debug mode. Stores outputs in deletable .pkl file')
+    parser.add_argument('--debug_mode', action='store_true', help='Run in debug mode. Stores outputs in deletable files')
     parser.add_argument('--n_samples', type = int, default = 10, help='Number of samples to use for evaluation')
     # AudioMNIST
     parser.add_argument('--labeltype', type = str, default = 'gender', choices=['gender', 'digit'], help='Type of label to use for AudioMNIST')

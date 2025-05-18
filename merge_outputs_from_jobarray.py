@@ -44,7 +44,7 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('--output_path', type = str, default = 'outputs', help='Path to save output in')
     parser.add_argument('--dataset', type = str, default = 'AudioMNIST', help='Dataset to use')
-    parser.add_argument('--debug_mode', action='store_true', help='Run in debug mode. Stores outputs in deletable .pkl file')
+    parser.add_argument('--debug_mode', action='store_true', help='Run in debug mode. Stores outputs in deletable files')
     parser.add_argument('--job_name', type = str, default = None, help='Job name for hpc batch jobs. Used to see which folder to look for attributions in.')
     parser.add_argument('--job_id', type = str, default = None, help='Id of this job')
     parser.add_argument('--n_samples', type = int, default = 10, help='Number of samples to use for evaluation')

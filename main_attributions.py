@@ -68,7 +68,27 @@ def main(args):
     if args.use_FreqRISE and (not freqrise_filename in attributions or args.debug_mode):
         # compute FreqRISE
         print('Creating FreqRISE')
-        freqrise = FreqRISE(model, batch_size=args.batch_size, num_batches=num_batches, device=device, use_softmax=args.use_softmax)
+        random_ID_dir = None
+        if args.save_signals:
+            # Save metadata to a txt file
+            random_ID_dir = os.path.join(args.output_path, 'samples', f'{random_ID}{'_debug' if args.debug_mode else ''}', 'freqrise')
+            os.makedirs(random_ID_dir, exist_ok=True)
+            with open(os.path.join(random_ID_dir, f'metadata_{random_ID}.txt'), 'w') as meta_file:
+                meta_file.write(f'Metadata for FreqRISE. ID: {random_ID}\n')
+                meta_file.write(f'Dataset: {args.dataset}\n')
+                if args.dataset == 'AudioMNIST':
+                    meta_file.write(f'Label Type: {args.labeltype}\n')
+                elif args.dataset == 'synthetic':
+                    meta_file.write(f'Noise Level: {args.noise_level}\n')
+                    meta_file.write(f'Synthetic Signal Length: {args.synth_sig_len}\n')
+                    meta_file.write(f'Add Random Peaks: {not args.no_random_peaks}\n')
+                meta_file.write(f'Num Samples: {args.n_samples}\n')
+                meta_file.write(f'Num Masks: {args.n_masks}\n')
+                meta_file.write(f'Batch Size: {args.batch_size}\n')
+                meta_file.write(f'Num Cells: {args.num_cells}\n')
+                meta_file.write(f'Use Softmax: {args.use_softmax}\n')
+                meta_file.write(f'Probability of Drop: {args.probability_of_drop}\n')
+        freqrise = FreqRISE(model, batch_size=args.batch_size, num_batches=num_batches, device=device, use_softmax=args.use_softmax, save_signals_path=random_ID_dir)
         print('Computing FreqRISE')
         attributions[freqrise_filename] = freqrise.forward_dataloader(test_loader, args.num_cells, args.probability_of_drop)
         print('FreqRISE computed')
@@ -81,7 +101,7 @@ def main(args):
         random_ID_dir = None
         if args.save_signals:
             # Save metadata to a txt file
-            random_ID_dir = os.path.join(args.output_path, 'samples', random_ID)
+            random_ID_dir = os.path.join(args.output_path, 'samples', f'{random_ID}{'_debug' if args.debug_mode else ''}', 'surl')
             os.makedirs(random_ID_dir, exist_ok=True)
             with open(os.path.join(random_ID_dir, f'metadata_{random_ID}.txt'), 'w') as meta_file:
                 meta_file.write(f'Metadata for SURL. ID: {random_ID}\n')
@@ -137,7 +157,7 @@ if __name__ == '__main__':
     parser.add_argument('--model_path', type = str, default = 'models', help='Path to models folder')
     parser.add_argument('--output_path', type = str, default = 'outputs', help='Path to save output')
     parser.add_argument('--dataset', type = str, default = 'AudioMNIST', choices=['AudioMNIST', 'synthetic'], help='Dataset to use')
-    parser.add_argument('--debug_mode', action='store_true', help='Run in debug mode. Stores outputs in deletable .pkl file')
+    parser.add_argument('--debug_mode', action='store_true', help='Run in debug mode. Stores outputs in deletable files')
     parser.add_argument('--job_idx', type = int, default = None, help='Job idx for hpc batch job. Used to store output seperately for parallel jobs')
     parser.add_argument('--job_name', type = str, default = None, help='Job name for hpc batch job. Used to create a folder to store seperate outputs in')
     parser.add_argument('--save_signals', action='store_true', help='Save signals when running attributions.')

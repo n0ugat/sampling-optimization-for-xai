@@ -1,66 +1,54 @@
-# Used to create loss and reward plots for the paper
 import matplotlib.pyplot as plt
-import numpy as np
+
 import os
+import sys
 import pickle
 import argparse
 
-def plot_loss(input_path, output_path):
+# Add repo directory to system path
+repo_dir = os.path.abspath(os.path.join(os.getcwd(), '.'))
+sys.path.append(repo_dir)
+
+from src.plotting.importance_plots import ts_importance
+
+def plot_saliency_with_fft(input_path, output_path, method_name=None):
     with open(input_path, 'rb') as f:
         data = pickle.load(f)
+
+    signal_fft = data['signal_fft']
+    importance = data['importance']
+    target_class = data['target_class']
+    pred_class = data['prediction']
+    pred_correct = target_class == pred_class
     
-    loss = data['loss']
-    num_batches = len(loss)
-    x = np.arange(num_batches)
-    
-    plt.figure(figsize=(6, 4))
-    plt.plot(x, loss, label='Loss')
-    plt.xlabel('Batch')
-    plt.ylabel('Loss')
-    plt.title('Loss over batches')
-    plt.legend()
-    plt.grid()
+    fig, ax = plt.subplots(1,1, figsize=(6, 4))
+    ts_importance(
+            ax=ax, 
+            importance=importance.numpy(), 
+            timeseries=signal_fft.numpy())
+    plt.xlabel('Frequency')
+    plt.ylabel('Magnitude')
+    plt.title(f'{method_name} ({'Correct' if pred_correct else 'Incorrect'} Prediction)')
     plt.tight_layout()
-    
     plt.savefig(output_path)
     plt.close()
-
-def plot_rewards(input_path, output_path):
-    with open(input_path, 'rb') as f:
-        data = pickle.load(f)
     
-    rewards = data['rewards']
-    num_batches = len(rewards)
-    x = np.arange(num_batches)
     
-    plt.figure(figsize=(6, 4))
-    plt.plot(x, rewards, label='Rewards')
-    plt.xlabel('Batch')
-    plt.ylabel('Rewards')
-    plt.title('Rewards over batches')
-    plt.legend()
-    plt.grid()
-    plt.tight_layout()
-    
-    plt.savefig(output_path)
-    plt.close()
-
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument('--output_path', type = str, default = 'outputs', help='Path to samples and where to save plots')
     parser.add_argument('--sample_id', type = str, default = None, help='ID of the sample to plot. Example "dReYlZE9".')
     parser.add_argument('--sample_idx', type = int, default = None, help='idx of the sample to plot. None for all samples')
-    parser.add_argument('--plot_type', type = str, default = 'both', choices=['both', 'loss', 'rewards'], help='Type of plot to create')
-    parser.add_argument('--method_name', type = str, default = 'both', choices=['both', 'SURL', 'FiSURL'], help='Choose method to plot loss and reward for.')
+    parser.add_argument('--method_name', type = str, default = 'all', choices=['all', 'SURL', 'FiSURL', 'FreqRISE'], help='Choose method to plot loss and reward for.')
     parser.add_argument('--debug_mode', action='store_true', help='Run in debug mode. Stores outputs in deletable files')
     args = parser.parse_args()
     
     args.method_name = args.method_name.lower()
     assert args.sample_id is not None, "sample_id must be provided"
     
-    if args.method_name == 'both':
-        method_names = ['SURL', 'FiSURL']
+    if args.method_name == 'all':
+        method_names = ['SURL', 'FiSURL', 'FreqRISE']
     else:
         method_names = [args.method_name]
     
@@ -83,10 +71,4 @@ if __name__ == "__main__":
                 output_paths.append(output_path)
             
             for input_path, output_path in zip(input_paths, output_paths):
-                if args.plot_type == 'both':
-                    plot_loss(input_path, output_path.replace('.png', '_loss.png'))
-                    plot_rewards(input_path, output_path.replace('.png', '_rewards.png'))
-                elif args.plot_type == 'loss':
-                    plot_loss(input_path, output_path.replace('.png', '_loss.png'))
-                elif args.plot_type == 'rewards':
-                    plot_rewards(input_path, output_path.replace('.png', '_rewards.png'))
+                plot_saliency_with_fft(input_path, output_path.replace('.png', '_importance_fft.png'), method_name)

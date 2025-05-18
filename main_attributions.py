@@ -46,17 +46,62 @@ def main(args):
         if not 'saliency' in attributions or args.debug_mode:
             # compute saliency
             print('Computing saliency')
-            attributions['saliency'] = compute_gradient_scores(model, test_loader, attr_method = 'gxi')
+            random_ID_dir = None
+            if args.save_signals:
+                # Save metadata to a txt file
+                random_ID_dir = os.path.join(args.output_path, 'samples', f'{random_ID}{'_debug' if args.debug_mode else ''}', 'saliency')
+                os.makedirs(random_ID_dir, exist_ok=True)
+                with open(os.path.join(random_ID_dir, f'metadata_{random_ID}.txt'), 'w') as meta_file:
+                    meta_file.write(f'Metadata for Saliency. ID: {random_ID}\n')
+                    meta_file.write(f'Dataset: {args.dataset}\n')
+                    if args.dataset == 'AudioMNIST':
+                        meta_file.write(f'Label Type: {args.labeltype}\n')
+                    elif args.dataset == 'synthetic':
+                        meta_file.write(f'Noise Level: {args.noise_level}\n')
+                        meta_file.write(f'Synthetic Signal Length: {args.synth_sig_len}\n')
+                        meta_file.write(f'Add Random Peaks: {not args.no_random_peaks}\n')
+                    meta_file.write(f'Num Samples: {args.n_samples}\n')
+            attributions['saliency'] = compute_gradient_scores(model, test_loader, attr_method = 'gxi', device=device, save_signals_path=random_ID_dir)
             print('Saliency computed')
         if not 'lrp' in attributions or args.debug_mode:
             # compute LRP
             print('Computing LRP')
-            attributions['lrp'] = compute_gradient_scores(model, test_loader, attr_method = 'lrp')
+            random_ID_dir = None
+            if args.save_signals:
+                # Save metadata to a txt file
+                random_ID_dir = os.path.join(args.output_path, 'samples', f'{random_ID}{'_debug' if args.debug_mode else ''}', 'lrp')
+                os.makedirs(random_ID_dir, exist_ok=True)
+                with open(os.path.join(random_ID_dir, f'metadata_{random_ID}.txt'), 'w') as meta_file:
+                    meta_file.write(f'Metadata for LRP. ID: {random_ID}\n')
+                    meta_file.write(f'Dataset: {args.dataset}\n')
+                    if args.dataset == 'AudioMNIST':
+                        meta_file.write(f'Label Type: {args.labeltype}\n')
+                    elif args.dataset == 'synthetic':
+                        meta_file.write(f'Noise Level: {args.noise_level}\n')
+                        meta_file.write(f'Synthetic Signal Length: {args.synth_sig_len}\n')
+                        meta_file.write(f'Add Random Peaks: {not args.no_random_peaks}\n')
+                    meta_file.write(f'Num Samples: {args.n_samples}\n')
+            attributions['lrp'] = compute_gradient_scores(model, test_loader, attr_method = 'lrp', device=device, save_signals_path=random_ID_dir)
             print('LRP computed')
         if not 'IG' in attributions or args.debug_mode:
             # compute integrated gradients
             print('Computing IG')
-            attributions['IG'] = compute_gradient_scores(model, test_loader, attr_method = 'ig')
+            random_ID_dir = None
+            if args.save_signals:
+                # Save metadata to a txt file
+                random_ID_dir = os.path.join(args.output_path, 'samples', f'{random_ID}{'_debug' if args.debug_mode else ''}', 'ig')
+                os.makedirs(random_ID_dir, exist_ok=True)
+                with open(os.path.join(random_ID_dir, f'metadata_{random_ID}.txt'), 'w') as meta_file:
+                    meta_file.write(f'Metadata for IG. ID: {random_ID}\n')
+                    meta_file.write(f'Dataset: {args.dataset}\n')
+                    if args.dataset == 'AudioMNIST':
+                        meta_file.write(f'Label Type: {args.labeltype}\n')
+                    elif args.dataset == 'synthetic':
+                        meta_file.write(f'Noise Level: {args.noise_level}\n')
+                        meta_file.write(f'Synthetic Signal Length: {args.synth_sig_len}\n')
+                        meta_file.write(f'Add Random Peaks: {not args.no_random_peaks}\n')
+                    meta_file.write(f'Num Samples: {args.n_samples}\n')
+            attributions['IG'] = compute_gradient_scores(model, test_loader, attr_method = 'ig', device=device, save_signals_path=random_ID_dir)
             print('IG computed')
     
     
@@ -112,6 +157,7 @@ def main(args):
                 elif args.dataset == 'synthetic':
                     meta_file.write(f'Noise Level: {args.noise_level}\n')
                     meta_file.write(f'Synthetic Signal Length: {args.synth_sig_len}\n')
+                    meta_file.write(f'Add Random Peaks: {not args.no_random_peaks}\n')
                 meta_file.write(f'Num Samples: {args.n_samples}\n')
                 meta_file.write(f'Num Masks: {args.n_masks}\n')
                 meta_file.write(f'Batch Size: {args.batch_size}\n')
@@ -144,6 +190,7 @@ def main(args):
                 elif args.dataset == 'synthetic':
                     meta_file.write(f'Noise Level: {args.noise_level}\n')
                     meta_file.write(f'Synthetic Signal Length: {args.synth_sig_len}\n')
+                    meta_file.write(f'Add Random Peaks: {not args.no_random_peaks}\n')
                 meta_file.write(f'Num Samples: {args.n_samples}\n')
                 meta_file.write(f'Num Masks: {args.n_masks}\n')
                 meta_file.write(f'Batch Size: {args.batch_size}\n')
@@ -153,6 +200,9 @@ def main(args):
                 meta_file.write(f'Alpha: {args.alpha}\n')
                 meta_file.write(f'Beta: {args.beta}\n')
                 meta_file.write(f'Decay: {args.decay}\n')
+                meta_file.write(f'Number of Taps: {args.num_taps}\n')
+                meta_file.write(f'Bandwidth: {args.bandwidth}\n')
+                meta_file.write(f'Keep Ratio: {args.keep_ratio}\n')
         fisurl = FiSURL(model, num_taps=args.num_taps, num_banks=args.num_banks, fs=args.fs, bandwidth=args.bandwidth, batch_size=args.batch_size, num_batches=num_batches, keep_ratio=args.keep_ratio, device=device, use_softmax=args.use_softmax, lr=args.lr, alpha=args.alpha, beta=args.beta, decay=args.decay, save_signals_path=random_ID_dir)
         print('Computing FiSURL')
         attributions[fisurl_filename] = fisurl.forward_dataloader(test_loader)
@@ -226,11 +276,11 @@ if __name__ == '__main__':
     
     if args.job_idx and args.job_name:
         jobarray_vals = [
-            {'u_FR':False,'u_S':False,'u_FS':False,'nm':150,'bs':10,'nc':10,'us':False,'ub':True,'pd':0.5,'lr':0.1,'a':1.0,'b':0.01,'d':0.9},
-            {'u_FR':False,'u_S':False,'u_FS':False,'nm':150,'bs':10,'nc':10,'us':False,'ub':True,'pd':0.5,'lr':0.1,'a':1.0,'b':0.01,'d':0.9},
-            {'u_FR':True,'u_S':False,'u_FS':False,'nm':150,'bs':10,'nc':10,'us':False,'ub':False,'pd':0.5,'lr':0.1,'a':1.0,'b':0.01,'d':0.9},
-            {'u_FR':True,'u_S':True,'u_FS':True,'nm':150,'bs':10,'nc':10,'us':False,'ub':False,'pd':0.5,'lr':0.1,'a':1.0,'b':0.01,'d':0.9},
-            {'u_FR':False,'u_S':True,'u_FS':False,'nm':150,'bs':10,'nc':10,'us':False,'ub':False,'pd':0.5,'lr':0.1,'a':1.0,'b':0.01,'d':0.9}
+            {'u_FR':False,'u_S':False,'u_FS':False,'nm':150,'bs':10,'nc':10,'us':False,'ub':True,'pd':0.5,'lr':0.1,'a':1.0,'b':0.01,'d':0.9,'nb':128,'nt':501,'fs':8000,'bw':None,'kr':0.05},
+            {'u_FR':False,'u_S':False,'u_FS':False,'nm':150,'bs':10,'nc':10,'us':False,'ub':True,'pd':0.5,'lr':0.1,'a':1.0,'b':0.01,'d':0.9,'nb':128,'nt':501,'fs':8000,'bw':None,'kr':0.05},
+            {'u_FR':True,'u_S':False,'u_FS':False,'nm':150,'bs':10,'nc':10,'us':False,'ub':False,'pd':0.5,'lr':0.1,'a':1.0,'b':0.01,'d':0.9,'nb':128,'nt':501,'fs':8000,'bw':None,'kr':0.05},
+            {'u_FR':True,'u_S':True,'u_FS':True,'nm':150,'bs':10,'nc':10,'us':False,'ub':False,'pd':0.5,'lr':0.1,'a':1.0,'b':0.01,'d':0.9,'nb':128,'nt':501,'fs':8000,'bw':None,'kr':0.05},
+            {'u_FR':False,'u_S':True,'u_FS':False,'nm':150,'bs':10,'nc':10,'us':False,'ub':False,'pd':0.5,'lr':0.1,'a':1.0,'b':0.01,'d':0.9,'nb':128,'nt':501,'fs':8000,'bw':None,'kr':0.05}
         ]
         
         job_vals = jobarray_vals[args.job_idx]
@@ -247,7 +297,16 @@ if __name__ == '__main__':
         args.alpha =                job_vals['a']
         args.beta =                 job_vals['b']
         args.decay =                job_vals['d']
-    
+        args.num_banks =            job_vals['nb']
+        args.num_taps =             job_vals['nt']
+        args.fs =                   job_vals['fs']
+        args.bandwidth =            job_vals['bw']
+        args.keep_ratio =           job_vals['kr']
+        
+    if args.dataset == 'synthetic' and args.use_FiSURL:
+        assert args.synth_sig_len == args.fs, "Synthetic signal length should be equal to fs if using FiSURL, as that would always be the case for 1 second signals"
+        
     if args.dataset == 'synthetic' and (args.use_FreqRISE or args.use_SURL or args.use_FiSURL):
         assert args.synth_sig_len > args.num_cells, "Number of cells should be lower than synth_sig_len if using synthetic dataset"
+        
     main(args)

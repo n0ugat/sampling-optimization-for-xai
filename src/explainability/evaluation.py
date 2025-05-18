@@ -107,21 +107,20 @@ def mask_and_predict(model, test_loader, importance, quantile, device = 'cpu', c
 
     return mean_true_class_prob / total
 
-def compute_gradient_scores(model, testloader, attr_method, save_signals_path=None):
+def compute_gradient_scores(model, testloader, attr_method, device='cpu', save_signals_path=None):
     lrp_scores = []
     for sample, target in testloader:
+        sample = sample.to(device)
+        model = model.to(device)
+        target = target.to(device)
         if save_signals_path:
             with torch.no_grad(): 
                 predictions = model(sample.float(), only_feats = False).squeeze()
-        cuda = torch.cuda.is_available()
-        if cuda:
-            sample = sample.cuda()
-            model = model.cuda()
-        relevance_time = lrp_utils.zennit_relevance(sample.float(), model, target=target, attribution_method=attr_method, cuda=cuda)
+        relevance_time = lrp_utils.zennit_relevance(sample, model, target=target, attribution_method=attr_method)
         dftlrp = dft_lrp.DFTLRP(sample.shape[-1], 
                                 leverage_symmetry=True, 
                                 precision=32,
-                                cuda = cuda,
+                                device = device,
                                 create_stdft=False,
                                 create_inverse=False
                                 )

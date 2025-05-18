@@ -34,14 +34,16 @@ class FilterBank:
         # Apply each filter bank to the input signal
         y = []
         bank_borders = []
+        device = x.device
         for i in range(self.num_banks):
-            y.append(signal.lfilter(self.banks[i], 1, x, axis=-1))
+            y.append(signal.lfilter(self.banks[i], 1, x.cpu(), axis=-1))
             y[i] = torch.from_numpy(y[i])
             if return_bank_borders:
                 bank_borders.append(self.bandwidth * (i + 1))
+        y = torch.stack(y, dim=0).to(device) # Shape: (num_banks, 1, 1, fs)
         if return_bank_borders:
-            return torch.stack(y, dim=0), bank_borders
-        return torch.stack(y, dim=0)
+            return y, bank_borders
+        return y
     
     def batch_apply(self, x):
         ys = []
@@ -56,7 +58,6 @@ class FilterBank:
             y, bank_borders = self.apply(x, return_bank_borders=True)
         else:
             y = self.apply(x)
-
         # Mask shape is (batch_size, 1, 1, num_banks)
         # y shape is (num_banks, 1, 1, self.fs)
         if mask is not None:

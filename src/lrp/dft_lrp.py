@@ -6,14 +6,14 @@ import src.lrp.dft_utils as dft_utils
 # code from https://github.com/jvielhaben/DFT-LRP
 
 class DFTLRP():
-    def __init__(self, signal_length, precision=32, cuda=True, leverage_symmetry=False, window_shift=None, window_width=None, window_shape=None, create_inverse=True, create_transpose_inverse=True, create_forward=True, create_dft=True, create_stdft=True) -> None:
+    def __init__(self, signal_length, precision=32, device='cpu', leverage_symmetry=False, window_shift=None, window_width=None, window_shape=None, create_inverse=True, create_transpose_inverse=True, create_forward=True, create_dft=True, create_stdft=True) -> None:
         """
         Class for Discrete Fourier transform in pytorch and relevance propagation through DFT layer.
 
         Args:
         signal_length: number of time steps in the signal
         leverage_symmetry: if True, levereage that for real signal the DF transformed signal is symmetric and compute only first half it
-        cuda: use gpu
+        device: processing device, e.g. 'cuda' or 'cpu'
         precision: 32 or 16 for reduced precision with less memory usage
 
         window_width: width of the window for short time DFT
@@ -29,7 +29,7 @@ class DFTLRP():
         self.signal_length = signal_length
         self.nyquist_k = signal_length//2
         self.precision = precision
-        self.cuda = cuda
+        self.device = device
         self.symmetry = leverage_symmetry
         self.stdft_kwargs = {"window_shift": window_shift, "window_width": window_width, "window_shape": window_shape}
 
@@ -37,37 +37,40 @@ class DFTLRP():
         # dft
         if create_dft:
             if create_forward:
-                self.fourier_layer = self.create_fourier_layer(signal_length=self.signal_length, symmetry=self.symmetry, transpose=False, inverse=False, short_time=False, cuda=self.cuda, precision=self.precision)
+                self.fourier_layer = self.create_fourier_layer(signal_length=self.signal_length, symmetry=self.symmetry, transpose=False, inverse=False, short_time=False, device=self.device, precision=self.precision)
             # inverse dft
             if create_inverse:
-                self.inverse_fourier_layer = self.create_fourier_layer(signal_length=self.signal_length, symmetry=self.symmetry, transpose=False, inverse=True, short_time=False, cuda=self.cuda, precision=self.precision)
+                self.inverse_fourier_layer = self.create_fourier_layer(signal_length=self.signal_length, symmetry=self.symmetry, transpose=False, inverse=True, short_time=False, device=self.device, precision=self.precision)
             # transpose inverse dft for dft-lrp
             if create_transpose_inverse:
-                self.transpose_inverse_fourier_layer = self.create_fourier_layer(signal_length=self.signal_length, symmetry=self.symmetry, transpose=True, inverse=True, short_time=False, cuda=self.cuda, precision=self.precision)
+                self.transpose_inverse_fourier_layer = self.create_fourier_layer(signal_length=self.signal_length, symmetry=self.symmetry, transpose=True, inverse=True, short_time=False, device=self.device, precision=self.precision)
 
         if create_stdft:   
             # stdft
             if create_forward:
-                self.st_fourier_layer = self.create_fourier_layer(signal_length=self.signal_length, symmetry=self.symmetry, transpose=False, inverse=False, short_time=True, cuda=self.cuda, precision=self.precision, **self.stdft_kwargs)
+                self.st_fourier_layer = self.create_fourier_layer(signal_length=self.signal_length, symmetry=self.symmetry, transpose=False, inverse=False, short_time=True, device=self.device, precision=self.precision, **self.stdft_kwargs)
             # inverse stdft
             if create_inverse:
-                self.st_inverse_fourier_layer = self.create_fourier_layer(signal_length=self.signal_length, symmetry=self.symmetry, transpose=False, inverse=True, short_time=True, cuda=self.cuda, precision=self.precision, **self.stdft_kwargs)
+                self.st_inverse_fourier_layer = self.create_fourier_layer(signal_length=self.signal_length, symmetry=self.symmetry, transpose=False, inverse=True, short_time=True, device=self.device, precision=self.precision, **self.stdft_kwargs)
             # transpose inverse stdft for dft-lrp
             if create_transpose_inverse:
-                self.st_transpose_inverse_fourier_layer = self.create_fourier_layer(signal_length=self.signal_length, symmetry=self.symmetry, transpose=True, inverse=True, short_time=True, cuda=self.cuda, precision=self.precision, **self.stdft_kwargs)
+                self.st_transpose_inverse_fourier_layer = self.create_fourier_layer(signal_length=self.signal_length, symmetry=self.symmetry, transpose=True, inverse=True, short_time=True, device=self.device, precision=self.precision, **self.stdft_kwargs)
 
 
     @staticmethod
-    def _array_to_tensor(input: np.ndarray, precision: float, cuda: bool) -> torch.tensor:
+    def _array_to_tensor(input: np.ndarray, precision: float, device: str) -> torch.tensor:
         dtype = torch.float32 if precision==32 else torch.float16
-        input = torch.tensor(input, dtype=dtype)
-        if cuda:
-            input = input.cuda()
+        if not isinstance(input, torch.Tensor):
+            input = torch.tensor(input, dtype=dtype)
+        else:
+            input = input.clone().detach().to(dtype)
+
+        input = input.to(device)
         return input
 
 
     @staticmethod
-    def create_fourier_layer(signal_length: int, inverse: bool, symmetry: bool, transpose: bool, short_time: bool, cuda: bool, precision:int, **stdft_kwargs):
+    def create_fourier_layer(signal_length: int, inverse: bool, symmetry: bool, transpose: bool, short_time: bool, device: str, precision:int, **stdft_kwargs):
         """
         Create linear layer with Discrete Fourier Transformation weights
 
@@ -76,7 +79,7 @@ class DFTLRP():
         symmetry: if True, levereage that for real signal the DF transformed signal is symmetric and compute only first half it
         transpose: create layer with transposed DFT weights for explicit relevance propagation
         short_time: short time DFT
-        cuda: use gpu
+        device: processing device, e.g. 'cuda' or 'cpu'
         precision: 32 or 16 for reduced precision with less memory usage
         """
         if short_time:
@@ -87,7 +90,7 @@ class DFTLRP():
         if transpose:
             weights_fourier = weights_fourier.T
 
-        weights_fourier = DFTLRP._array_to_tensor(weights_fourier, precision, cuda).T
+        weights_fourier = DFTLRP._array_to_tensor(weights_fourier, precision, device).T
 
         n_in, n_out = weights_fourier.shape
         fourier_layer = torch.nn.Linear(n_in, n_out, bias=False)
@@ -95,8 +98,7 @@ class DFTLRP():
             fourier_layer.weight = nn.Parameter(weights_fourier)
         del weights_fourier
         
-        if cuda:
-            fourier_layer = fourier_layer.cuda()
+        fourier_layer = fourier_layer.to(device)
 
         return fourier_layer        
 
@@ -153,7 +155,7 @@ class DFTLRP():
             else:
                 transform = self.fourier_layer
 
-        signal = self._array_to_tensor(signal, self.precision, self.cuda)
+        signal = self._array_to_tensor(signal, self.precision, self.device)
 
         with torch.no_grad():
             signal_hat = transform(signal).cpu().numpy()
@@ -164,7 +166,7 @@ class DFTLRP():
         return signal_hat
 
     
-    def dft_lrp(self, relevance: np.ndarray, signal: np.ndarray, signal_hat=None, short_time=False, epsilon=1e-6, real=False) -> np.ndarray:
+    def dft_lrp(self, relevance: torch.Tensor, signal: torch.Tensor, signal_hat=None, short_time=False, epsilon=1e-6, real=False) -> np.ndarray:
         """
         Relevance propagation thorugh DFT
 
@@ -182,16 +184,16 @@ class DFTLRP():
             transform = self.fourier_layer
             dft_transform = self.transpose_inverse_fourier_layer
         
-        signal = self._array_to_tensor(signal, self.precision, self.cuda)
+        signal = self._array_to_tensor(signal, self.precision, self.device)
         if signal_hat is None:
             signal_hat = transform(signal)
         
-        relevance = self._array_to_tensor(relevance, self.precision, self.cuda)
+        relevance = self._array_to_tensor(relevance, self.precision, self.device)
         norm = signal + epsilon
         relevance_normed = relevance / norm
 
-        relevance_normed = self._array_to_tensor(relevance_normed, self.precision, self.cuda)
-        signal_hat = self._array_to_tensor(signal_hat, self.precision, self.cuda)
+        relevance_normed = self._array_to_tensor(relevance_normed, self.precision, self.device)
+        signal_hat = self._array_to_tensor(signal_hat, self.precision, self.device)
         with torch.no_grad():
             relevance_hat = dft_transform(relevance_normed)
             relevance_hat = signal_hat * relevance_hat

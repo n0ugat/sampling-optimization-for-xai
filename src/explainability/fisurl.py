@@ -36,7 +36,7 @@ class FiSURL(nn.Module): # FiSURL: Filterbank Sampling Using Reinforcement Learn
         self.num_taps = num_taps
         self.num_banks = num_banks
         self.fs = fs
-        self.bandwidth = bandwidth
+        self.bandwidth = bandwidth if bandwidth else (fs / 2) /  num_banks
         self.filter_bank = FilterBank(self.num_banks, self.fs, self.num_taps, self.bandwidth)
 
         # Initialize mask generator parameters
@@ -90,9 +90,15 @@ class FiSURL(nn.Module): # FiSURL: Filterbank Sampling Using Reinforcement Learn
                 predictions = self.encoder(x_masked.float().to(self.device), only_feats = False).detach()
                 if self.use_softmax:
                     predictions = torch.softmax(predictions, dim=-1)
+                 
+            masks_up = torch.zeros((self.batch_size, 1, 1, int(self.fs / 2) + 1)).to(self.device)
+            index = 0
+            for i in range(1, self.num_banks+1):
+                next_index = int(np.ceil(i * self.bandwidth))
+                masks_up[:, :, :, index:next_index] = masks[:, :, :, i-1].unsqueeze(-1)
+                index = next_index
 
-            rewards = []
-            sals = torch.matmul(predictions.transpose(0,1).float(), masks.view(self.batch_size, -1).abs().float()).transpose(0,1).unsqueeze(0).cpu() # Compute saliency
+            sals = torch.matmul(predictions.transpose(0,1).float(), masks_up.view(self.batch_size, -1).abs().float()).transpose(0,1).unsqueeze(0) # Compute saliency
             p.append(sals)
 
             # Faithfulness: how close is the masked prediction to original

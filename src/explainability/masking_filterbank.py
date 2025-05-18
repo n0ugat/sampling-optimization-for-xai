@@ -42,7 +42,7 @@ class FilterbankMaskPolicy(nn.Module):
         probabilities = torch.sigmoid(self.logits) # Apply sigmoid to the logits to get probabilities
         batch_distribution = Bernoulli(probabilities.unsqueeze(0).expand(self.batch_size, -1)) # Bernoulli distribution with a batch of probabilities
         grid = batch_distribution.sample() # Sample a batch of mask from the Bernoulli distribution
-        log_probs = batch_distribution.log_prob(grid).sum(dim=1) # Log probability of the masks
+        log_probs = batch_distribution.log_prob(grid).sum(dim=1).to(self.device) # Log probability of the masks
         grid = grid.unsqueeze(1) # Convert grid from (batch_size, num_banks) to (batch_size, 1, num_banks)
 
         # Pad the grid with reflection and sample a shift

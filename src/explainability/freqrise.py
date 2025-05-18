@@ -53,7 +53,7 @@ class FreqRISE(nn.Module):
         if self.save_signals_path:
             with torch.no_grad(): 
                 # get predictions of the model with the original input
-                pred_original = self.encoder(input_data.unsqueeze(0).float().to(self.device), only_feats = False).detach().squeeze()
+                pred_original = self.encoder(input_data.unsqueeze(0).float(), only_feats = False).detach().squeeze()
                 if self.use_softmax:
                     pred_original = torch.softmax(pred_original, dim=-1)
             start_time = time.time()
@@ -67,14 +67,14 @@ class FreqRISE(nn.Module):
                 
                 with torch.no_grad(): 
                     # get predictions of the model with the masked input
-                    predictions = self.encoder(x_mask.float().to(self.device), only_feats = False).detach()
-                if self.device == 'mps':
-                    predictions = predictions.cpu()
+                    predictions = self.encoder(x_mask.float(), only_feats = False).detach()
                 if self.use_softmax:
                     # Why use softmax here?
                     predictions = torch.nn.functional.softmax(predictions, dim=1)
+                if self.device == 'mps':
+                    predictions = predictions.cpu()
                 # compute saliency of the masked input
-                sal = torch.matmul(predictions.transpose(0,1).float(), masks.view(self.batch_size, -1).abs().float()).transpose(0,1).unsqueeze(0).cpu()
+                sal = torch.matmul(predictions.transpose(0,1).float(), masks.view(self.batch_size, -1).abs().float()).transpose(0,1).unsqueeze(0)
                 p.append(sal)
         importance = torch.cat(p, dim=0).sum(dim=0)/(self.num_batches*self.batch_size)
         # Selects the importance values for the given class y

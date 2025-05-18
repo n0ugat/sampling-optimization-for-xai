@@ -1,4 +1,6 @@
 import numpy as np
+import pickle
+import os
 import torch
 import torch.nn.functional as F
 from quantus.metrics import Complexity
@@ -105,9 +107,12 @@ def mask_and_predict(model, test_loader, importance, quantile, device = 'cpu', c
 
     return mean_true_class_prob / total
 
-def compute_gradient_scores(model, testloader, attr_method):
+def compute_gradient_scores(model, testloader, attr_method, save_signals_path=None):
     lrp_scores = []
     for sample, target in testloader:
+        if save_signals_path:
+            with torch.no_grad(): 
+                predictions = model(sample.float(), only_feats = False).squeeze()
         cuda = torch.cuda.is_available()
         if cuda:
             sample = sample.cuda()
@@ -121,5 +126,17 @@ def compute_gradient_scores(model, testloader, attr_method):
                                 create_inverse=False
                                 )
         signal_freq, relevance_freq = dftlrp.dft_lrp(relevance_time, sample.float(), real=False, short_time=False)
+        if save_signals_path:
+            for idx in range(sample.shape[0]):
+                output_dict = {
+                    'signal': sample[idx].squeeze().cpu(),
+                    'signal_fft' : np.abs(signal_freq[idx]).squeeze(),
+                    'target_class': target[idx].cpu(),
+                    'prediction' : torch.argmax(predictions[idx]).cpu(),
+                    'importance': relevance_freq[idx].squeeze()
+                }
+                sample_path = os.path.join(save_signals_path, f'sample_{idx}.pkl')
+                with open(sample_path, mode='wb') as f:
+                    pickle.dump(output_dict, f)
         lrp_scores.append(torch.tensor(relevance_freq))
     return lrp_scores

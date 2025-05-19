@@ -38,8 +38,6 @@ def main(args):
         attributions = {}
 
     # Random ID of this run. For saving samples of signals
-    # chars = string.ascii_letters + string.digits  # a-zA-Z0-9
-    # random_ID = ''.join(random.choices(chars, k=8))
     random_ID = args.random_ID
     print('Random_ID: ', random_ID)
 
@@ -282,11 +280,17 @@ if __name__ == '__main__':
     
     if args.job_idx and args.job_name:
         jobarray_vals = [
-            {'u_FR':False,'u_S':False,'u_FS':False,'nm':150,'bs':10,'nc':10,'us':False,'ub':True,'pd':0.5,'lr_S':0.1,'a_S':1.0,'b_S':0.01,'d':0.9,'lr_F':0.1,'a_F':1.0,'b_F':0.01,'nb':128,'nt':501,'fs':8000,'bw':None,'kr':0.05},
-            {'u_FR':False,'u_S':False,'u_FS':False,'nm':150,'bs':10,'nc':10,'us':False,'ub':True,'pd':0.5,'lr_S':0.1,'a_S':1.0,'b_S':0.01,'d':0.9,'lr_F':0.1,'a_F':1.0,'b_F':0.01,'nb':128,'nt':501,'fs':8000,'bw':None,'kr':0.05},
-            {'u_FR':True,'u_S':False,'u_FS':False,'nm':150,'bs':10,'nc':10,'us':False,'ub':False,'pd':0.5,'lr_S':0.1,'a_S':1.0,'b_S':0.01,'d':0.9,'lr_F':0.1,'a_F':1.0,'b_F':0.01,'nb':128,'nt':501,'fs':8000,'bw':None,'kr':0.05},
-            {'u_FR':True,'u_S':True,'u_FS':True,'nm':150,'bs':10,'nc':10,'us':False,'ub':False,'pd':0.5,'lr_S':0.1,'a_S':1.0,'b_S':0.01,'d':0.9,'lr_F':0.1,'a_F':1.0,'b_F':0.01,'nb':128,'nt':501,'fs':8000,'bw':None,'kr':0.05},
-            {'u_FR':False,'u_S':True,'u_FS':False,'nm':150,'bs':10,'nc':10,'us':False,'ub':False,'pd':0.5,'lr_S':0.1,'a_S':1.0,'b_S':0.01,'d':0.9,'lr_F':0.1,'a_F':1.0,'b_F':0.01,'nb':128,'nt':501,'fs':8000,'bw':None,'kr':0.05}
+            {'u_FR':True,'u_S':True,'u_FS':True,'nm':10000,'bs':250,'nc':128,'us':False,'ub':True,'pd':0.5,'lr_S':0.1,'a_S':1.00,'b_S':0.01,'d':0.9,'lr_F':0.1,'a_F':1.00,'b_F':0.01,'nb':128,'nt':501,'bw':None,'kr':0.05},
+            {'u_FR':True,'u_S':True,'u_FS':True,'nm':10000,'bs':250,'nc':128,'us':False,'ub':True,'pd':0.5,'lr_S':0.2,'a_S':1.00,'b_S':0.01,'d':0.9,'lr_F':0.2,'a_F':1.00,'b_F':0.01,'nb':128,'nt':501,'bw':None,'kr':0.05},
+            {'u_FR':True,'u_S':True,'u_FS':True,'nm':10000,'bs':250,'nc':128,'us':False,'ub':True,'pd':0.5,'lr_S':0.5,'a_S':1.00,'b_S':0.01,'d':0.9,'lr_F':0.5,'a_F':1.00,'b_F':0.01,'nb':128,'nt':501,'bw':None,'kr':0.05},
+            {'u_FR':True,'u_S':True,'u_FS':True,'nm':10000,'bs':250,'nc':128,'us':False,'ub':True,'pd':0.5,'lr_S':1.0,'a_S':1.00,'b_S':0.01,'d':0.9,'lr_F':1.0,'a_F':1.00,'b_F':0.01,'nb':128,'nt':501,'bw':None,'kr':0.05},
+            {'u_FR':True,'u_S':True,'u_FS':True,'nm':10000,'bs':250,'nc':128,'us':False,'ub':True,'pd':0.5,'lr_S':0.8,'a_S':1.00,'b_S':0.01,'d':0.9,'lr_F':0.8,'a_F':1.00,'b_F':0.01,'nb':128,'nt':501,'bw':None,'kr':0.05},
+            {'u_FR':True,'u_S':True,'u_FS':True,'nm':10000,'bs':250,'nc':128,'us':False,'ub':True,'pd':0.5,'lr_S':0.5,'a_S':1.00,'b_S':0.01,'d':0.9,'lr_F':0.5,'a_F':1.00,'b_F':0.01,'nb':128,'nt':501,'bw':None,'kr':0.05},
+            {'u_FR':True,'u_S':True,'u_FS':True,'nm':10000,'bs':250,'nc':128,'us':False,'ub':True,'pd':0.5,'lr_S':0.5,'a_S':1.00,'b_S':1.00,'d':0.9,'lr_F':0.5,'a_F':1.00,'b_F':1.00,'nb':128,'nt':501,'bw':None,'kr':0.05},
+            {'u_FR':True,'u_S':True,'u_FS':True,'nm':10000,'bs':250,'nc':128,'us':False,'ub':True,'pd':0.5,'lr_S':0.5,'a_S':1.00,'b_S':0.10,'d':0.9,'lr_F':0.5,'a_F':1.00,'b_F':0.10,'nb':128,'nt':501,'bw':None,'kr':0.05},
+            {'u_FR':True,'u_S':True,'u_FS':True,'nm':10000,'bs':250,'nc':128,'us':False,'ub':True,'pd':0.5,'lr_S':0.5,'a_S':10.0,'b_S':0.01,'d':0.9,'lr_F':0.5,'a_F':10.0,'b_F':0.01,'nb':128,'nt':501,'bw':None,'kr':0.05},
+            {'u_FR':True,'u_S':True,'u_FS':True,'nm':10000,'bs':250,'nc':128,'us':False,'ub':True,'pd':0.5,'lr_S':0.5,'a_S':1.00,'b_S':10.0,'d':0.9,'lr_F':0.5,'a_F':1.00,'b_F':10.0,'nb':128,'nt':501,'bw':None,'kr':0.05},
+            {'u_FR':True,'u_S':True,'u_FS':True,'nm':10000,'bs':250,'nc':128,'us':False,'ub':True,'pd':0.5,'lr_S':0.5,'a_S':1.00,'b_S':0.50,'d':0.9,'lr_F':0.5,'a_F':1.00,'b_F':0.50,'nb':128,'nt':501,'bw':None,'kr':0.05}
         ]
         
         job_vals = jobarray_vals[args.job_idx]
@@ -308,7 +312,7 @@ if __name__ == '__main__':
         args.beta_F =               job_vals['b_F']
         args.num_banks =            job_vals['nb']
         args.num_taps =             job_vals['nt']
-        args.fs =                   job_vals['fs']
+        args.fs =                   8000 if args.dataset == "AudioMNIST" else args.synth_sig_len
         args.bandwidth =            job_vals['bw']
         args.keep_ratio =           job_vals['kr']
         

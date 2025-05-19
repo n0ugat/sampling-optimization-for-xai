@@ -6,24 +6,24 @@ merge_jobname="merge_${jobname}"
 
 dataset="synthetic"
 output_path="outputs"
-n_samples=10
+n_samples=50
 
 # If using AudioMNIST
 labeltype="digit" 
 
 # If using synthetic
-noise_level=0.5
-synth_sig_len=50
+noise_level=0.0
+synth_sig_len=100
 
 # Generate the jobarray.sh
 cat <<EOF > jobarray.sh
 #!/bin/bash
 #BSUB -q voltash
-#BSUB -J ${jobname}[1-5]
+#BSUB -J ${jobname}[1-11]
 #BSUB -n 4
 #BSUB -W 00:30
 #BSUB -R "span[hosts=1]"
-#BSUB -R "rusage[mem=1GB]"
+#BSUB -R "rusage[mem=2GB]"
 #BSUB -o outputs/hpclogs/${jobname}_%J/%I.out
 #BSUB -e outputs/hpclogs/${jobname}_%J/%I.err
 
@@ -43,7 +43,6 @@ python main_attributions.py \\
     --synth_sig_len $synth_sig_len \\
     --labeltype $labeltype \\
     --n_samples $n_samples \\
-    --debug_mode
 EOF
 
 # Submit the job
@@ -61,7 +60,7 @@ cat <<EOF > merge_outputs.sh
 #BSUB -n 1
 #BSUB -W 00:10
 #BSUB -R "span[hosts=1]"
-#BSUB -R "rusage[mem=4GB]"
+#BSUB -R "rusage[mem=8GB]"
 #BSUB -w ended(${jobname})
 #BSUB -o outputs/hpclogs/${merge_jobname}_%J.out
 #BSUB -e outputs/hpclogs/${merge_jobname}_%J.err
@@ -80,7 +79,6 @@ python merge_outputs_from_jobarray.py \\
     --synth_sig_len $synth_sig_len \\
     --labeltype $labeltype \\
     --n_samples $n_samples \\
-    --debug_mode
 EOF
 
 # Submit the job

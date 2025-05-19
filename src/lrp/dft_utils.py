@@ -1,5 +1,4 @@
 import numpy as np
-import torch
 
 # code from https://github.com/jvielhaben/DFT-LRP
 def create_fourier_weights(signal_length, inverse=False, symmetry=False, real=False):  

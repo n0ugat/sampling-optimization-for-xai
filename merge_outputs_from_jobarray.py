@@ -1,9 +1,6 @@
-import sys
 import os
 import pickle
 import argparse
-
-import torch
 
 def main(args):
     jobname = args.job_name

@@ -3,9 +3,11 @@ import pickle
 import os
 import torch
 import torch.nn.functional as F
+from itertools import chain, combinations
+
 from quantus.metrics import Complexity
+
 from src.explainability.metrics import relevance_rank_accuracy
-from src.data.generators import powerset
 from src.lrp import dft_lrp
 from src.lrp import lrp_utils
 
@@ -39,7 +41,9 @@ def complexity_scores(attributions, cutoff = None, only_pos = False):
 def localization_scores(attributions, labels, cutoff = None, only_pos = False):
     loc_scores = []
     ks = [5, 16, 32, 53]
-    classes_ = powerset(ks)
+    breakpoint()
+    s = list(ks)  # Convert the input iterable to a list.
+    classes_ = list(chain.from_iterable(combinations(s, r) for r in range(len(s) + 1)))
     for i, sample in enumerate(attributions):
         if labels[i]== 0:
             continue

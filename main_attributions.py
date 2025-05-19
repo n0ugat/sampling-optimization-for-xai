@@ -2,8 +2,6 @@ import torch
 import argparse
 import pickle
 import os
-import random
-import string
 
 from src.explainability import FreqRISE, FiSURL, SURL, compute_gradient_scores
 from src.data import load_data
@@ -282,7 +280,9 @@ if __name__ == '__main__':
     args = parser.parse_args()    
     
     if args.job_idx and args.job_name:
-        jobarray_vals = [
+        
+        # AudioMNIST test_vals
+        audiomnist_jobarray_vals = [
             {'u_FR':True,'u_S':True,'u_FS':True,'nm':10000,'bs':250,'nc':128,'us':False,'ub':True,'pd':0.5,'lr_S':0.1,'a_S':1.00,'b_S':0.01,'d':0.9,'lr_F':0.1,'a_F':1.00,'b_F':0.01,'nb':128,'nt':501,'bw':None,'kr':0.05},
             {'u_FR':True,'u_S':True,'u_FS':True,'nm':10000,'bs':250,'nc':128,'us':False,'ub':True,'pd':0.5,'lr_S':0.2,'a_S':1.00,'b_S':0.01,'d':0.9,'lr_F':0.2,'a_F':1.00,'b_F':0.01,'nb':128,'nt':501,'bw':None,'kr':0.05},
             {'u_FR':True,'u_S':True,'u_FS':True,'nm':10000,'bs':250,'nc':128,'us':False,'ub':True,'pd':0.5,'lr_S':0.5,'a_S':1.00,'b_S':0.01,'d':0.9,'lr_F':0.5,'a_F':1.00,'b_F':0.01,'nb':128,'nt':501,'bw':None,'kr':0.05},
@@ -293,10 +293,34 @@ if __name__ == '__main__':
             {'u_FR':True,'u_S':True,'u_FS':True,'nm':10000,'bs':250,'nc':128,'us':False,'ub':True,'pd':0.5,'lr_S':0.5,'a_S':1.00,'b_S':0.10,'d':0.9,'lr_F':0.5,'a_F':1.00,'b_F':0.10,'nb':128,'nt':501,'bw':None,'kr':0.05},
             {'u_FR':True,'u_S':True,'u_FS':True,'nm':10000,'bs':250,'nc':128,'us':False,'ub':True,'pd':0.5,'lr_S':0.5,'a_S':10.0,'b_S':0.01,'d':0.9,'lr_F':0.5,'a_F':10.0,'b_F':0.01,'nb':128,'nt':501,'bw':None,'kr':0.05},
             {'u_FR':True,'u_S':True,'u_FS':True,'nm':10000,'bs':250,'nc':128,'us':False,'ub':True,'pd':0.5,'lr_S':0.5,'a_S':1.00,'b_S':10.0,'d':0.9,'lr_F':0.5,'a_F':1.00,'b_F':10.0,'nb':128,'nt':501,'bw':None,'kr':0.05},
-            {'u_FR':True,'u_S':True,'u_FS':True,'nm':10000,'bs':250,'nc':128,'us':False,'ub':True,'pd':0.5,'lr_S':0.5,'a_S':1.00,'b_S':0.50,'d':0.9,'lr_F':0.5,'a_F':1.00,'b_F':0.50,'nb':128,'nt':501,'bw':None,'kr':0.05}
+            {'u_FR':True,'u_S':True,'u_FS':True,'nm':10000,'bs':250,'nc':128,'us':False,'ub':True,'pd':0.5,'lr_S':0.5,'a_S':1.00,'b_S':0.50,'d':0.9,'lr_F':0.5,'a_F':1.00,'b_F':0.50,'nb':128,'nt':501,'bw':None,'kr':0.05},
+            {'u_FR':True,'u_S':True,'u_FS':True,'nm':10000,'bs':250,'nc':250,'us':False,'ub':True,'pd':0.5,'lr_S':0.5,'a_S':1.00,'b_S':0.01,'d':0.9,'lr_F':0.5,'a_F':1.00,'b_F':0.01,'nb':250,'nt':501,'bw':None,'kr':0.05},
+            {'u_FR':True,'u_S':True,'u_FS':True,'nm':10000,'bs':250,'nc':500,'us':False,'ub':True,'pd':0.5,'lr_S':0.5,'a_S':1.00,'b_S':0.01,'d':0.9,'lr_F':0.5,'a_F':1.00,'b_F':0.01,'nb':500,'nt':501,'bw':None,'kr':0.05},
+            {'u_FR':True,'u_S':True,'u_FS':True,'nm':10000,'bs':250,'nc': 50,'us':False,'ub':True,'pd':0.5,'lr_S':0.5,'a_S':1.00,'b_S':0.01,'d':0.9,'lr_F':0.5,'a_F':1.00,'b_F':0.01,'nb': 50,'nt':501,'bw':None,'kr':0.05}
         ]
         
-        job_vals = jobarray_vals[args.job_idx]
+        # Synthetic test_vals, For synth sig len = 100
+        synthetic_jobarray_vals = [
+            {'u_FR':True,'u_S':True,'u_FS':True,'nm':10000,'bs':250,'nc':15,'us':False,'ub':True,'pd':0.5,'lr_S':0.1,'a_S':1.00,'b_S':0.01,'d':0.9,'lr_F':0.1,'a_F':1.00,'b_F':0.01,'nb':15,'nt':501,'bw':None,'kr':0.05},
+            {'u_FR':True,'u_S':True,'u_FS':True,'nm':10000,'bs':250,'nc':15,'us':False,'ub':True,'pd':0.5,'lr_S':0.2,'a_S':1.00,'b_S':0.01,'d':0.9,'lr_F':0.2,'a_F':1.00,'b_F':0.01,'nb':15,'nt':501,'bw':None,'kr':0.05},
+            {'u_FR':True,'u_S':True,'u_FS':True,'nm':10000,'bs':250,'nc':15,'us':False,'ub':True,'pd':0.5,'lr_S':0.5,'a_S':1.00,'b_S':0.01,'d':0.9,'lr_F':0.5,'a_F':1.00,'b_F':0.01,'nb':15,'nt':501,'bw':None,'kr':0.05},
+            {'u_FR':True,'u_S':True,'u_FS':True,'nm':10000,'bs':250,'nc':15,'us':False,'ub':True,'pd':0.5,'lr_S':1.0,'a_S':1.00,'b_S':0.01,'d':0.9,'lr_F':1.0,'a_F':1.00,'b_F':0.01,'nb':15,'nt':501,'bw':None,'kr':0.05},
+            {'u_FR':True,'u_S':True,'u_FS':True,'nm':10000,'bs':250,'nc':15,'us':False,'ub':True,'pd':0.5,'lr_S':0.8,'a_S':1.00,'b_S':0.01,'d':0.9,'lr_F':0.8,'a_F':1.00,'b_F':0.01,'nb':15,'nt':501,'bw':None,'kr':0.05},
+            {'u_FR':True,'u_S':True,'u_FS':True,'nm':10000,'bs':250,'nc':15,'us':False,'ub':True,'pd':0.5,'lr_S':0.5,'a_S':1.00,'b_S':0.01,'d':0.9,'lr_F':0.5,'a_F':1.00,'b_F':0.01,'nb':15,'nt':501,'bw':None,'kr':0.05},
+            {'u_FR':True,'u_S':True,'u_FS':True,'nm':10000,'bs':250,'nc':15,'us':False,'ub':True,'pd':0.5,'lr_S':0.5,'a_S':1.00,'b_S':1.00,'d':0.9,'lr_F':0.5,'a_F':1.00,'b_F':1.00,'nb':15,'nt':501,'bw':None,'kr':0.05},
+            {'u_FR':True,'u_S':True,'u_FS':True,'nm':10000,'bs':250,'nc':15,'us':False,'ub':True,'pd':0.5,'lr_S':0.5,'a_S':1.00,'b_S':0.10,'d':0.9,'lr_F':0.5,'a_F':1.00,'b_F':0.10,'nb':15,'nt':501,'bw':None,'kr':0.05},
+            {'u_FR':True,'u_S':True,'u_FS':True,'nm':10000,'bs':250,'nc':15,'us':False,'ub':True,'pd':0.5,'lr_S':0.5,'a_S':10.0,'b_S':0.01,'d':0.9,'lr_F':0.5,'a_F':10.0,'b_F':0.01,'nb':15,'nt':501,'bw':None,'kr':0.05},
+            {'u_FR':True,'u_S':True,'u_FS':True,'nm':10000,'bs':250,'nc':15,'us':False,'ub':True,'pd':0.5,'lr_S':0.5,'a_S':1.00,'b_S':10.0,'d':0.9,'lr_F':0.5,'a_F':1.00,'b_F':10.0,'nb':15,'nt':501,'bw':None,'kr':0.05},
+            {'u_FR':True,'u_S':True,'u_FS':True,'nm':10000,'bs':250,'nc':15,'us':False,'ub':True,'pd':0.5,'lr_S':0.5,'a_S':1.00,'b_S':0.50,'d':0.9,'lr_F':0.5,'a_F':1.00,'b_F':0.50,'nb':15,'nt':501,'bw':None,'kr':0.05},
+            {'u_FR':True,'u_S':True,'u_FS':True,'nm':10000,'bs':250,'nc':30,'us':False,'ub':True,'pd':0.5,'lr_S':0.5,'a_S':1.00,'b_S':0.01,'d':0.9,'lr_F':0.5,'a_F':1.00,'b_F':0.01,'nb':30,'nt':501,'bw':None,'kr':0.05},
+            {'u_FR':True,'u_S':True,'u_FS':True,'nm':10000,'bs':250,'nc': 5,'us':False,'ub':True,'pd':0.5,'lr_S':0.5,'a_S':1.00,'b_S':0.01,'d':0.9,'lr_F':0.5,'a_F':1.00,'b_F':0.01,'nb': 5,'nt':501,'bw':None,'kr':0.05},
+            {'u_FR':True,'u_S':True,'u_FS':True,'nm':10000,'bs':250,'nc': 2,'us':False,'ub':True,'pd':0.5,'lr_S':0.5,'a_S':1.00,'b_S':0.01,'d':0.9,'lr_F':0.5,'a_F':1.00,'b_F':0.01,'nb': 2,'nt':501,'bw':None,'kr':0.05}
+        ]
+        
+        if args.dataset == 'AudioMNIST':
+            job_vals = audiomnist_jobarray_vals[args.job_idx]
+        elif args.dataset == 'synthetic':
+            job_vals = synthetic_jobarray_vals[args.job_idx]
         args.use_FreqRISE =         job_vals['u_FR']
         args.use_SURL =             job_vals['u_S']
         args.use_FiSURL =           job_vals['u_FS']

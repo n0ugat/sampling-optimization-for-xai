@@ -2,17 +2,11 @@ import numpy as np
 import warnings
 
 import torch
-import torch.nn as nn
 
 import zennit.composites
-import zennit.rules
-import zennit.core
 import zennit.attribution
-from zennit.types import Linear
 
 from functools import partial
-
-import matplotlib.pyplot as plt
 
 # code from https://github.com/jvielhaben/DFT-LRP
 

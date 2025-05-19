@@ -13,5 +13,5 @@ conda activate freqrise
 
 lscpu
 echo "-----------------------------------------"
-python main_evaluation.py --labeltype digit --n_samples 10
+python main_evaluation.py --dataset synthetic --compute_localization_scores --labeltype digit --noise_level 0.0 --synth_sig_len 100 --n_samples 10 --compute_complexity_scores --compute_deletion_scores
 

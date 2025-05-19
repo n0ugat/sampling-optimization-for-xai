@@ -51,11 +51,12 @@ def plot_fft_fakemake_example(signal, length=1):
     ax[3].set_xlabel('Time [s]')
     ax[3].set_ylabel('Amplitude')
     plt.tight_layout()
-    plt.savefig(f"outputs/figures/fft_process_example.png")
+    os.makedirs("outputs/figures/fft_process", exist_ok=True)
+    plt.savefig("outputs/figures/fft_process/fft_process_example.png")
 
 
 if __name__ == "__main__":
-    signals, _ = synthetic_dataset_generator(n_samples=1, length=400, noiselevel=1, add_random_peaks=True, const_class=7, seed=42)
+    signals, _ = synthetic_dataset_generator(n_samples=1, length=100, noiselevel=1, add_random_peaks=True, const_class=7, seed=42)
     signal = signals[0]
     
     plot_fft_fakemake_example(signal, length=1) # Length of the signal in seconds

@@ -26,7 +26,10 @@ def main(args):
     if args.debug_mode:
         attributions_path = attributions_path.replace('.pkl', '_debug.pkl')
         output_path = output_path.replace('.pkl', '_debug.pkl')
-
+    if args.incrementing_masks:
+        attributions_path = attributions_path.replace('.pkl', '_im.pkl')
+        output_path = output_path.replace('.pkl', '_im.pkl')       
+        
     if os.path.exists(attributions_path):
         with open(attributions_path, 'rb') as f:
             attributions = pickle.load(f)
@@ -39,7 +42,19 @@ def main(args):
             evaluation = pickle.load(f)
     else:
         evaluation = {}
-    
+
+    if args.incrementing_masks:
+        if not 'n_masks' in evaluation:
+            evaluation['n_masks'] = {}
+        # For storing the mask count
+        print('Computing n_masks')
+        for key, value in attributions.items():
+            if key == 'predictions' or key == 'labels':
+                continue
+            if (not key in evaluation['n_masks']) or args.debug_mode:
+                if len(value) == 2:
+                    evaluation['n_masks'][key] = value[1]
+        
     if not 'deletion curves' in evaluation:
         evaluation['deletion curves'] = {}
     if args.compute_deletion_scores:
@@ -53,6 +68,8 @@ def main(args):
                     cutoff = args.freqrise_cutoff
                 else:
                     cutoff = None
+                if args.incrementing_masks and len(value) == 2:
+                    value = value[0]
                 evaluation['deletion curves'][key] = deletion_curves(model, test_loader, value, quantiles, device=device, cutoff = cutoff, method_name=key)
 
         if not 'random' in evaluation['deletion curves']:
@@ -70,6 +87,8 @@ def main(args):
             if key in ['predictions', 'labels']:
                 continue
             if not key in evaluation['complexity scores'] or args.debug_mode:
+                if args.incrementing_masks and len(value) == 2:
+                    value = value[0]
                 value = torch.cat(value).numpy()
                 if key.startswith('freqrise') or key.startswith('surl') or key.startswith('fisurl'):
                     cutoff = args.freqrise_cutoff
@@ -88,6 +107,8 @@ def main(args):
             if key in ['predictions', 'labels']:
                 continue
             if not key in evaluation['localization scores'] or args.debug_mode:
+                if args.incrementing_masks and len(value) == 2:
+                    value = value[0]
                 value = torch.cat(value).numpy()
                 if key.startswith('freqrise') or key.startswith('surl') or key.startswith('fisurl'):
                     cutoff = args.freqrise_cutoff
@@ -113,6 +134,7 @@ if __name__ == '__main__':
     parser.add_argument('--dataset', type = str, default = 'AudioMNIST', choices=['AudioMNIST', 'synthetic'], help='Dataset to use')
     parser.add_argument('--debug_mode', action='store_true', help='Run in debug mode. Stores outputs in deletable files')
     parser.add_argument('--n_samples', type = int, default = 10, help='Number of samples to use for evaluation')
+    parser.add_argument('--incrementing_masks', action='store_true', help='Run multiple processes on hpc with incrementing masks.')
     # AudioMNIST
     parser.add_argument('--labeltype', type = str, default = 'gender', choices=['gender', 'digit'], help='Type of label to use for AudioMNIST')
     # Synthetic

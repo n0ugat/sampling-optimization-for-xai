@@ -11,9 +11,11 @@ def main(args):
     evaluation_path = evaluation_path.replace('.pkl', f'_{args.n_samples}.pkl')
     if args.debug_mode:
         evaluation_path = evaluation_path.replace('.pkl', '_debug.pkl')
+    if args.incrementing_masks:
+        evaluation_path = evaluation_path.replace('.pkl', '_im.pkl')
     
     # Maske the evaluation data exists, and then read it
-    assert os.path.exists(evaluation_path), "No evaluation file those parameters exists"
+    assert os.path.exists(evaluation_path), "No evaluation file with those parameters exists"
     with open(evaluation_path, 'rb') as f:
         data = pickle.load(f)
     
@@ -48,6 +50,7 @@ if __name__ == '__main__':
     parser.add_argument('--dataset', type = str, default = 'AudioMNIST', choices=['AudioMNIST', 'synthetic'], help='Dataset to use')
     parser.add_argument('--debug_mode', action='store_true', help='Run in debug mode. Stores outputs in deletable files')
     parser.add_argument('--n_samples', type = int, default = 10, help='Number of samples to use for evaluation')
+    parser.add_argument('--incrementing_masks', action='store_true', help='Run multiple processes on hpc with incrementing masks.')
     # AudioMNIST
     parser.add_argument('--labeltype', type = str, default = 'gender', choices=['gender', 'digit'], help='Type of label to use for AudioMNIST')
     # Synthetic

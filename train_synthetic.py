@@ -1,5 +1,6 @@
 import argparse
 import matplotlib.pyplot as plt
+import os
 
 import torch
 import torch.nn as nn
@@ -82,6 +83,9 @@ def train_synthetic(n_samples, noise_level, synth_sig_len, epochs=100, model_pat
     
     print('Model trained')
     
+    output_path = f'outputs/figures/synthetic_training/ns_{n_samples}_nl_{noise_level}_ssl_{synth_sig_len}_epochs_{epochs}_adp_{add_random_peaks}_seed_{seed}'
+    os.makedirs(output_path, exist_ok=True)
+    
     # Plotting
     plt.plot(collect_train_loss, label='Train Loss')
     plt.plot(collect_val_loss, label='Validation Loss')
@@ -89,7 +93,7 @@ def train_synthetic(n_samples, noise_level, synth_sig_len, epochs=100, model_pat
     plt.ylabel('Loss')
     plt.title('Loss vs Epochs')
     plt.legend()
-    plt.savefig(f'outputs/figures/loss_plot_synthetic_train_{noise_level}_{synth_sig_len}.png')
+    plt.savefig(os.path.join(output_path, 'loss_plot.png'))
     plt.close()
     
     plt.plot(collect_train_accuracy, label='Train Accuracy')
@@ -98,7 +102,7 @@ def train_synthetic(n_samples, noise_level, synth_sig_len, epochs=100, model_pat
     plt.ylabel('Accuracy')
     plt.title('Accuracy vs Epochs')
     plt.legend()
-    plt.savefig(f'outputs/figures/accuracy_plot_synthetic_train_{noise_level}_{synth_sig_len}.png')
+    plt.savefig(os.path.join(output_path, 'accuracy_plot.png'))
     plt.close()
     
     # Save the model

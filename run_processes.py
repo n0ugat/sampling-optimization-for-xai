@@ -9,6 +9,7 @@ vars = {
     'dataset' : 'synthetic',
     'debug_mode' : True,
     'save_signals' : True,
+    'incrementing_masks' : True,
 # Methods
     'use_FreqRISE' : True,
     'use_SURL' : True,
@@ -18,13 +19,13 @@ vars = {
     'labeltype' : 'digit',
 # Synthetic
     'noise_level' : '0',
-    'synth_sig_len' : '50',
+    'synth_sig_len' : '100',
     'no_random_peaks' : False,
     'seed' : '42',
 # Hyperparams
     'n_samples' : '10',
     'n_masks' : '3000',
-    'batch_size' : '50',
+    'batch_size' : '100',
     'num_cells' : '10',
     'use_softmax' : False,
 # FreqRISE
@@ -35,9 +36,9 @@ vars = {
     'beta_S' : '0.01',
     'decay' : '0.9',
 # FiSURL
-    'lr_F' : '0.1',
+    'lr_F' : '1.0',
     'alpha_F' : '1.0',
-    'beta_F' : '0.01',
+    'beta_F' : '0.1',
     'num_banks' : '10',
     'num_taps' : '501',
     'keep_ratio' : '0.05'
@@ -60,6 +61,7 @@ scripts = [
         "--dataset", vars['dataset'],
         ("--debug_mode" if vars['debug_mode'] else ""),
         ("--save_signals" if vars['save_signals'] else ""),
+        ("--incrementing_masks" if vars['incrementing_masks'] else ""),
         ("--use_FreqRISE" if vars['use_FreqRISE'] else ""),
         ("--use_SURL" if vars['use_SURL'] else ""),
         ("--use_FiSURL" if vars['use_FiSURL'] else ""),
@@ -95,6 +97,7 @@ scripts = [
         "--dataset", vars['dataset'],
         ("--debug_mode" if vars['debug_mode'] else ""),
         "--n_samples", vars['n_samples'],
+        ("--incrementing_masks" if vars['incrementing_masks'] else ""),
         "--labeltype", vars['labeltype'],
         "--noise_level", vars['noise_level'],
         "--synth_sig_len", vars['synth_sig_len'],
@@ -109,6 +112,7 @@ scripts = [
         "--dataset", vars['dataset'],
         ("--debug_mode" if vars['debug_mode'] else ""),
         "--n_samples", vars['n_samples'],
+        ("--incrementing_masks" if vars['incrementing_masks'] else ""),
         "--labeltype", vars['labeltype'],
         "--noise_level", vars['noise_level'],
         "--synth_sig_len", vars['synth_sig_len'],
@@ -124,6 +128,7 @@ scripts = [
         "--dataset", vars['dataset'],
         ("--debug_mode" if vars['debug_mode'] else ""),
         "--n_samples", vars['n_samples'],
+        ("--incrementing_masks" if vars['incrementing_masks'] else ""),
         "--labeltype", vars['labeltype'],
         "--noise_level", vars['noise_level'],
         "--synth_sig_len", vars['synth_sig_len'],
@@ -135,6 +140,9 @@ scripts = [
         ("--debug_mode" if vars['debug_mode'] else "")
     ]
 ]
+
+if not vars['save_signals']:
+    scripts = [scripts[0], scripts[1], scripts[2], scripts[4]]
 
 # Run them in sequence
 for cmd in scripts:

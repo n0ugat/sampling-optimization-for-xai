@@ -73,12 +73,12 @@ if __name__ == "__main__":
                 search_dir = os.path.join(args.output_path, 'samples', f'{args.sample_id}{'_debug' if args.debug_mode else ''}', method_name.lower())
                 for i in range(len(os.listdir(search_dir)) - 1):
                     input_path = os.path.join(search_dir, f"sample_{i}.pkl")
-                    output_path = os.path.join(args.output_path, 'figures', f'{args.sample_id}{'_debug' if args.debug_mode else ''}', method_name, f'{i}.png')
+                    output_path = os.path.join(args.output_path, 'figures', 'samples', f'{args.sample_id}{'_debug' if args.debug_mode else ''}', method_name, f'{i}.png')
                     input_paths.append(input_path)
                     output_paths.append(output_path)
             else:
                 input_path = os.path.join(args.output_path, 'samples', f'{args.sample_id}{'_debug' if args.debug_mode else ''}', method_name.lower(), f"sample_{args.sample_idx}.pkl")
-                output_path = os.path.join(args.output_path, 'figures', f'{args.sample_id}{'_debug' if args.debug_mode else ''}', method_name, f'{args.sample_idx}.png')
+                output_path = os.path.join(args.output_path, 'figures', 'samples', f'{args.sample_id}{'_debug' if args.debug_mode else ''}', method_name, f'{args.sample_idx}.png')
                 input_paths.append(input_path)
                 output_paths.append(output_path)
             

@@ -43,15 +43,16 @@ def plot_and_print_signal_from_path(speaker_idx, digit, sample_idx, gender, titl
         fig.suptitle(title, fontsize=16)
         
     plt.tight_layout()
-    plt.savefig(f"outputs/figures/signal_plot_{speaker_idx}_{digit}_{sample_idx}.png")
+    os.makedirs(f"outputs/figures/signals", exist_ok=True)
+    plt.savefig(f"outputs/figures/signals/AudioMNIST_{speaker_idx}_{digit}_{sample_idx}.png")
     
 
-def plot_synthetic_signal():
-    signals, labels = synthetic_dataset_generator(n_samples=1, length=400, noiselevel=0.5, seed=43, add_random_peaks=True, const_class=6)
+def plot_synthetic_signal(n_samples, length, noiselevel, seed, add_random_peaks, const_class):
+    signals, labels = synthetic_dataset_generator(n_samples=n_samples, length=length, noiselevel=noiselevel, seed=seed, add_random_peaks=add_random_peaks, const_class=const_class)
     signal, label = signals[0], int(labels[0][0])
-    signal_length = signal.shape[0]
     
-    frequency_classes = [50, 100, 150]
+    freq_comps = length // 2
+    frequency_classes = [int(freq_comps*0.2), int(freq_comps*0.5), int(freq_comps*0.8)] # Frequencies for the classes
     class_ = label
     present_important_frequencies = []
     
@@ -59,17 +60,19 @@ def plot_synthetic_signal():
         if class_ & (1 << freq_idx):
             present_important_frequencies.append(frequency_classes[freq_idx])
             
-    data = np.zeros((1, signal_length))
+    data_gt = np.zeros((1, length))
     for freq in present_important_frequencies:
-        data += np.sin(2 * np.pi * freq / signal_length * np.arange(signal_length) + np.random.uniform(0, 2 * np.pi))
+        data_gt += np.sin(2 * np.pi * freq / length * np.arange(length) + np.random.uniform(0, 2 * np.pi))
     
-    data_fft = tfft(torch.tensor(data))
-    data_fft_re = torch.abs(data_fft)
-    importance_gt = data_fft_re.squeeze().numpy()
+    data_gt_fft_im = tfft(torch.tensor(data_gt))
+    data_gt_fft = torch.abs(data_gt_fft_im)
+    importance_gt = data_gt_fft.squeeze().numpy()
     
-    signal_fft = tfft(torch.tensor(signal))
-    signal_fft_re = torch.abs(signal_fft)
-    signal_fft_ = signal_fft_re.squeeze().numpy()
+    signal_fft_im = tfft(torch.tensor(signal))
+    signal_fft = torch.abs(signal_fft_im)
+    signal_fft_ = signal_fft.squeeze().numpy()
+    
+    os.makedirs(f"outputs/figures/signals", exist_ok=True)
     
     fig, ax = plt.subplots(1,1, figsize=(6, 3))
     fig.suptitle(f"Synthetic Signal Example. Class: {class_}", fontsize=12)
@@ -78,7 +81,7 @@ def plot_synthetic_signal():
     ax.set_xlabel("Time")
     ax.set_ylabel("Amplitude")
     plt.tight_layout()
-    plt.savefig(f"outputs/figures/synthetic_signal_plot_timedomain.png")
+    plt.savefig(f"outputs/figures/signals/synthetic_timedomain_length_{length}_nl_{noiselevel}_seed_{seed}_adp_{add_random_peaks}_cc_{const_class}.png")
     plt.close()
     fig, ax = plt.subplots(1,1, figsize=(6, 3))
     ax.set_xlabel("Frequency")
@@ -90,7 +93,7 @@ def plot_synthetic_signal():
             timeseries=signal_fft_
     )
     plt.tight_layout()
-    plt.savefig(f"outputs/figures/synthetic_signal_plot_freqdomain.png")
+    plt.savefig(f"outputs/figures/signals/synthetic_freqdomain_length_{length}_nl_{noiselevel}_seed_{seed}_adp_{add_random_peaks}_cc_{const_class}.png")
     plt.close()
 
 
@@ -106,4 +109,4 @@ if __name__ == '__main__':
     plot_and_print_signal_from_path(male_speaker_idx, male_speaker_digit, male_speaker_sample_idx, "male")
     plot_and_print_signal_from_path(female_speaker_idx, female_speaker_digit, female_speaker_sample_idx, "female")
     
-    plot_synthetic_signal()
+    plot_synthetic_signal(n_samples=1, length=100, noiselevel=0.0, seed=43, add_random_peaks=True, const_class=6)

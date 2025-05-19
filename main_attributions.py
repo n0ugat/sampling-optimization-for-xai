@@ -25,6 +25,8 @@ def main(args):
     output_path = output_path.replace('.pkl', f'_{args.n_samples}.pkl')
     if args.debug_mode:
         output_path = output_path.replace('.pkl', '_debug.pkl')
+    if args.incrementing_masks:
+        output_path = output_path.replace('.pkl', '_im.pkl')
     if args.job_name:
         output_path = output_path.replace(f'{args.output_path}', f'{args.output_path}/{args.job_name}')
     if args.job_idx:
@@ -107,10 +109,10 @@ def main(args):
     
     model.to(device)
     num_batches = args.n_masks//args.batch_size
-    filename_start = f'_ns_{args.n_samples}_nm_{args.n_masks}_bs_{args.batch_size}_nc_{args.num_cells}_us_{args.use_softmax}'
+    filename_start = f'_ns_{args.n_samples}_nm_{args.n_masks}_bs_{args.batch_size}_us_{args.use_softmax}'
     
     # FreqRISE
-    freqrise_filename = 'freqrise' + filename_start + f'_dropprob_{args.probability_of_drop}'
+    freqrise_filename = 'freqrise' + filename_start + f'_nc_{args.num_cells}_dropprob_{args.probability_of_drop}'
     if args.use_FreqRISE and (not freqrise_filename in attributions or args.debug_mode):
         # compute FreqRISE
         print('Creating FreqRISE')
@@ -136,11 +138,11 @@ def main(args):
                 meta_file.write(f'Probability of Drop: {args.probability_of_drop}\n')
         freqrise = FreqRISE(model, batch_size=args.batch_size, num_batches=num_batches, device=device, use_softmax=args.use_softmax, save_signals_path=random_ID_dir)
         print('Computing FreqRISE')
-        attributions[freqrise_filename] = freqrise.forward_dataloader(test_loader, args.num_cells, args.probability_of_drop)
+        attributions[freqrise_filename] = (freqrise.forward_dataloader(test_loader, args.num_cells, args.probability_of_drop), args.n_masks) if args.incrementing_masks else freqrise.forward_dataloader(test_loader, args.num_cells, args.probability_of_drop)
         print('FreqRISE computed')
     
     # SURL
-    surl_filename = 'surl' + filename_start + f'_lr_{args.lr_S}_alpha_{args.alpha_S}_beta_{args.beta_S}_decay_{args.decay}'
+    surl_filename = 'surl' + filename_start + f'_nc_{args.num_cells}_lr_{args.lr_S}_alpha_{args.alpha_S}_beta_{args.beta_S}_decay_{args.decay}'
     if args.use_SURL and (not surl_filename in attributions or args.debug_mode):
         # compute SURL
         print('Creating SURL')
@@ -169,11 +171,11 @@ def main(args):
                 meta_file.write(f'Decay: {args.decay}')
         surl = SURL(model, batch_size=args.batch_size, num_batches=num_batches, device=device, use_softmax=args.use_softmax, lr=args.lr_S, alpha=args.alpha_S, beta=args.beta_S, decay=args.decay, save_signals_path=random_ID_dir)
         print('Computing SURL')
-        attributions[surl_filename] = surl.forward_dataloader(test_loader, args.num_cells)
+        attributions[surl_filename] = (surl.forward_dataloader(test_loader, args.num_cells), args.n_masks) if args.incrementing_masks else surl.forward_dataloader(test_loader, args.num_cells)
         print('SURL computed')
         
     # FiSURL
-    fisurl_filename = 'fisurl' + filename_start + f'_lr_{args.lr_F}_alpha_{args.alpha_F}_beta_{args.beta_F}_decay_{args.decay}'
+    fisurl_filename = 'fisurl' + filename_start + f'_nb_{args.num_banks}_nt_{args.num_taps}_kr_{args.keep_ratio}_lr_{args.lr_F}_alpha_{args.alpha_F}_beta_{args.beta_F}_decay_{args.decay}'
     if args.use_FiSURL and (not fisurl_filename in attributions or args.debug_mode):
         # compute FiSURL
         print('Creating FiSURL')
@@ -205,7 +207,7 @@ def main(args):
                 meta_file.write(f'Keep Ratio: {args.keep_ratio}\n')
         fisurl = FiSURL(model, num_taps=args.num_taps, num_banks=args.num_banks, fs=args.fs, bandwidth=args.bandwidth, batch_size=args.batch_size, num_batches=num_batches, keep_ratio=args.keep_ratio, device=device, use_softmax=args.use_softmax, lr=args.lr_F, alpha=args.alpha_F, beta=args.beta_F, decay=args.decay, save_signals_path=random_ID_dir)
         print('Computing FiSURL')
-        attributions[fisurl_filename] = fisurl.forward_dataloader(test_loader)
+        attributions[fisurl_filename] = (fisurl.forward_dataloader(test_loader), args.n_masks) if args.incrementing_masks else fisurl.forward_dataloader(test_loader)
         print('FiSURL computed')
 
     # get predictions and labels
@@ -240,6 +242,7 @@ if __name__ == '__main__':
     parser.add_argument('--job_name', type = str, default = None, help='Job name for hpc batch job. Used to create a folder to store seperate outputs in')
     parser.add_argument('--save_signals', action='store_true', help='Save signals when running attributions.')
     parser.add_argument('--random_ID', type = str, default = "01234567", help='Random_ID for storing samples of signals.')
+    parser.add_argument('--incrementing_masks', action='store_true', help='Run multiple processes on hpc with incrementing masks.')
     # Explanation methods
     parser.add_argument('--use_FreqRISE', action='store_true', help=f'Explain with FreqRISE.')
     parser.add_argument('--use_SURL', action='store_true', help=f'Explain with SURL.')

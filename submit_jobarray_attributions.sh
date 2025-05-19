@@ -1,6 +1,8 @@
 #!/bin/bash
 
 # Define the variables
+# ! Manually add the tag "--incrementing_masks" to both the jobarray and merge job if you want to use the incrementing masks
+# ! The same applies to the tag "--no_random_peaks" if you want no random peaks in the synthetic data
 jobname="compute_attributions_test"
 merge_jobname="merge_${jobname}"
 

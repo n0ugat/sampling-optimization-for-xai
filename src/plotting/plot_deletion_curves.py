@@ -58,6 +58,7 @@ if __name__ == "__main__":
     parser.add_argument('--dataset', type = str, default = 'AudioMNIST', choices=['AudioMNIST', 'synthetic'], help='Dataset to use')
     parser.add_argument('--debug_mode', action='store_true', help='Debug mode')
     parser.add_argument('--n_samples', type = int, default = 10, help='Number of samples to use for evaluation')
+    parser.add_argument('--incrementing_masks', action='store_true', help='Run multiple processes on hpc with incrementing masks.')
     # AudioMNIST
     parser.add_argument('--labeltype', type = str, default = 'digit', choices=['digit', 'gender'], help='Labeltype to use for AudioMNIST')
     # synthetic
@@ -75,7 +76,10 @@ if __name__ == "__main__":
     input_name = input_name.replace('.pkl', f'_{args.n_samples}.pkl')
     if args.debug_mode:
         input_name = input_name.replace('.pkl', '_debug.pkl')
+    if args.incrementing_masks:
+        input_name = input_name.replace('.pkl', '_im.pkl')
     input_path = os.path.join(args.output_path, input_name)
+    
     assert os.path.exists(input_path), f"Input path {input_path} does not exist"
     
     output_path = os.path.join(args.output_path, 'figures', 'deletion_curves', input_name)

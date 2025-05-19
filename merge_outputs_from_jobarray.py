@@ -17,6 +17,8 @@ def main(args):
     output_filepath = output_filepath.replace('.pkl', f'_{args.n_samples}.pkl')
     if args.debug_mode:
         output_filepath = output_filepath.replace('.pkl', '_debug.pkl')
+    if args.incrementing_masks:
+        output_filepath = output_filepath.replace('.pkl', '_im.pkl')
     if os.path.exists(output_filepath):
         with open(output_filepath, 'rb') as f:
             attributions = pickle.load(f)
@@ -48,6 +50,7 @@ if __name__ == '__main__':
     parser.add_argument('--job_name', type = str, default = None, help='Job name for hpc batch jobs. Used to see which folder to look for attributions in.')
     parser.add_argument('--job_id', type = str, default = None, help='Id of this job')
     parser.add_argument('--n_samples', type = int, default = 10, help='Number of samples to use for evaluation')
+    parser.add_argument('--incrementing_masks', action='store_true', help='Run multiple processes on hpc with incrementing masks.')
     # AudioMNIST
     parser.add_argument('--labeltype', type = str, default = 'digit', help='Type of label to use for AudioMNIST')
     # Synthetic

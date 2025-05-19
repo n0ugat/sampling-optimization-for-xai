@@ -46,7 +46,6 @@ if __name__ == "__main__":
     args = parser.parse_args()
     
     args.method_name = args.method_name.lower()
-    assert args.sample_id is not None, "sample_id must be provided"
     
     if args.method_name == 'all':
         method_names = ['SURL', 'FiSURL', 'FreqRISE', 'IG', 'LRP', 'Saliency']

@@ -38,8 +38,9 @@ def main(args):
         attributions = {}
 
     # Random ID of this run. For saving samples of signals
-    chars = string.ascii_letters + string.digits  # a-zA-Z0-9
-    random_ID = ''.join(random.choices(chars, k=8))
+    # chars = string.ascii_letters + string.digits  # a-zA-Z0-9
+    # random_ID = ''.join(random.choices(chars, k=8))
+    random_ID = args.random_ID
     print('Random_ID: ', random_ID)
 
     ## Compute baseline attributions
@@ -240,6 +241,7 @@ if __name__ == '__main__':
     parser.add_argument('--job_idx', type = int, default = None, help='Job idx for hpc batch job. Used to store output seperately for parallel jobs')
     parser.add_argument('--job_name', type = str, default = None, help='Job name for hpc batch job. Used to create a folder to store seperate outputs in')
     parser.add_argument('--save_signals', action='store_true', help='Save signals when running attributions.')
+    parser.add_argument('--random_ID', type = str, default = "01234567", help='Random_ID for storing samples of signals.')
     # Explanation methods
     parser.add_argument('--use_FreqRISE', action='store_true', help=f'Explain with FreqRISE.')
     parser.add_argument('--use_SURL', action='store_true', help=f'Explain with SURL.')
@@ -247,7 +249,7 @@ if __name__ == '__main__':
     # AudioMNIST
     parser.add_argument('--labeltype', type = str, default = 'digit', choices=['gender', 'digit'], help='Type of label to use for AudioMNIST')
     # Synthetic
-    parser.add_argument('--noise_level', type = float, default = 0, help='Noise level for synthetic dataset. Either 0.8 or 0.01.')
+    parser.add_argument('--noise_level', type = float, default = 0.0, help='Noise level for synthetic dataset. Either 0.8 or 0.01.')
     parser.add_argument('--synth_sig_len', type = int, default = 50, help='Length of the synthetic signals.')
     parser.add_argument('--no_random_peaks', action='store_true', help='Add random peaks to the signals')
     parser.add_argument('--seed', type = int, default = 42, help='Seed for random number generator')

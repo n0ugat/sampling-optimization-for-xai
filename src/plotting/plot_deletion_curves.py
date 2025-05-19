@@ -61,7 +61,7 @@ if __name__ == "__main__":
     # AudioMNIST
     parser.add_argument('--labeltype', type = str, default = 'digit', choices=['digit', 'gender'], help='Labeltype to use for AudioMNIST')
     # synthetic
-    parser.add_argument('--noise_level', type = float, default = 0, help='Noise level to use for synthetic dataset')
+    parser.add_argument('--noise_level', type = float, default = 0.0, help='Noise level to use for synthetic dataset')
     parser.add_argument('--synth_sig_len', type = int, default = 50, help='Signal length to use for synthetic dataset')
     parser.add_argument('--no_random_peaks', action='store_true', help='Add random peaks to the signals')
     args = parser.parse_args()

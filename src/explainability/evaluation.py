@@ -40,10 +40,17 @@ def complexity_scores(attributions, cutoff = None, only_pos = False):
 
 def localization_scores(attributions, labels, cutoff = None, only_pos = False):
     loc_scores = []
-    ks = [5, 16, 32, 53]
-    breakpoint()
-    s = list(ks)  # Convert the input iterable to a list.
-    classes_ = list(chain.from_iterable(combinations(s, r) for r in range(len(s) + 1)))
+    freq_comps = attributions.shape[-1]
+    frequency_classes = [int(freq_comps*0.2), int(freq_comps*0.5), int(freq_comps*0.8)] # Frequencies for the classes
+    n_freqs = len(frequency_classes)
+    n_classes = 1 << n_freqs
+    classes_ = []
+    for class_ in range(n_classes):
+        classes = []
+        for i in range(n_freqs):
+            if class_ & (1 << i):
+                classes.append(frequency_classes[i])
+        classes_.append(tuple(classes))
     for i, sample in enumerate(attributions):
         if labels[i]== 0:
             continue

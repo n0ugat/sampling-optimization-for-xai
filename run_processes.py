@@ -9,7 +9,10 @@ vars = {
     'dataset' : 'synthetic',
     'debug_mode' : True,
     'save_signals' : True,
+# What to compute
     'incrementing_masks' : False,
+    'make_deletion_curve_plots' : True,
+    'save_evaluation_scores_in_txt' : True,
 # Methods
     'use_FreqRISE' : True,
     'use_SURL' : True,
@@ -59,16 +62,16 @@ assert vars['dataset'] in ['AudioMNIST', 'synthetic'], "Dataset must be either '
 if vars['dataset'] == 'AudioMNIST':
     assert vars['labeltype'] in ['digit', 'gender'], "Labeltype must be either 'digit' or 'gender'"
 if vars['dataset'] == 'synthetic':
-    assert vars['noise_level'] >= 0.0, "Noise level must be greater than or equal to 0.0"
-    assert vars['synth_sig_len'] > 0, "Synthetic signal length must be greater than 0"
+    assert float(vars['noise_level']) >= 0.0, "Noise level must be greater than or equal to 0.0"
+    assert int(vars['synth_sig_len']) > 0, "Synthetic signal length must be greater than 0"
 if vars['use_FreqRISE']:
-    assert vars['probability_of_drop'] >= 0.0 and vars['probability_of_drop'] <= 1.0, "Probability of drop must be between 0.0 and 1.0"
+    assert float(vars['probability_of_drop']) >= 0.0 and float(vars['probability_of_drop']) <= 1.0, "Probability of drop must be between 0.0 and 1.0"
 if vars['use_FreqRISE'] or vars['use_SURL']:
-    assert vars['num_cells'] > 0 and vars['num_cells'] <= vars['fs'], "Number of cells must be greater than 0 and less than or equal to fs"
+    assert int(vars['num_cells']) > 0 and int(vars['num_cells']) <= int(vars['fs']), "Number of cells must be greater than 0 and less than or equal to fs"
 if vars['use_FiSURL']:
-    assert vars['num_banks'] > 0 and vars['num_banks'] <= vars['fs'], "Number of banks must be greater than 0 and less than or equal to fs"
-    assert vars['num_taps'] > 0, "Number of taps must be greater than 0"
-    assert vars['keep_ratio'] >= 0.0 and vars['keep_ratio'] <= 1.0, "Keep ratio must be between 0.0 and 1.0"
+    assert int(vars['num_banks']) > 0 and int(vars['num_banks']) <= int(vars['fs']), "Number of banks must be greater than 0 and less than or equal to fs"
+    assert int(vars['num_taps']) > 0, "Number of taps must be greater than 0"
+    assert float(vars['keep_ratio']) >= 0.0 and float(vars['keep_ratio']) <= 1.0, "Keep ratio must be between 0.0 and 1.0"
     
 chars = string.ascii_letters + string.digits  # a-zA-Z0-9
 random_ID = ''.join(random.choices(chars, k=8))
@@ -172,7 +175,11 @@ scripts = [
     ]
 ]
 
-final_scripts = [scripts[0], scripts[1], scripts[2], scripts[3]]
+final_scripts = [scripts[0], scripts[1]]
+if vars['save_evaluation_scores_in_txt']:
+    final_scripts.append(scripts[2])
+if vars['make_deletion_curve_plots']:
+    final_scripts.append(scripts[3])
 if vars['save_signals']:
     final_scripts.append(scripts[4])
     final_scripts.append(scripts[5])

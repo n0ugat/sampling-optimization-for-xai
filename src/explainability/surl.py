@@ -89,8 +89,9 @@ class SURL(nn.Module):
                 if self.use_softmax:
                     predictions = torch.softmax(predictions, dim=-1)
 
-            sals = torch.matmul(predictions.unsqueeze(2).float(), masks.abs().float()).transpose(1,2)
-            p.append(sals)
+            # sals = torch.matmul(predictions.unsqueeze(2).float(), masks.abs().float()).transpose(1,2)
+            sal = torch.matmul(predictions.transpose(0,1).float(), masks.view(self.batch_size, -1).abs().float()).transpose(0,1).unsqueeze(0) # Compute saliency
+            p.append(sal)
 
             # Faithfulness: how close is the masked prediction to original
             faithfulness_rewards = -torch.abs(pred_original[target_class] - predictions[:,target_class])

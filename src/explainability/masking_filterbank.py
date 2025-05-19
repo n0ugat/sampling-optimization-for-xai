@@ -44,20 +44,20 @@ class FilterbankMaskPolicy(nn.Module):
         grid = batch_distribution.sample() # Sample a batch of mask from the Bernoulli distribution
         log_probs = batch_distribution.log_prob(grid).sum(dim=1).to(self.device) # Log probability of the masks
         grid = grid.unsqueeze(1) # Convert grid from (batch_size, num_banks) to (batch_size, 1, num_banks)
+        
+        # # Pad the grid with reflection and sample a shift
+        # if self.device == 'mps':
+        #     grid = F.pad(grid, self.pad_size, mode='reflect') # Pad the grid with reflection, meaning the values at the edges are reflected
+        #     shift = torch.randint(0, self.num_banks, size=(self.batch_size,)) # Randomly sample a shift
+        #     masks = torch.empty((self.batch_size, *self.mask_shape), dtype = self.dtype) # Initialize the masks tensor
+        # else:
+        #     grid = F.pad(grid, self.pad_size, mode='reflect').to(self.device) # Pad the grid with reflection, meaning the values at the edges are reflected
+        #     shift = torch.randint(0, self.num_banks, size=(self.batch_size,), device=self.device) # Randomly sample a shift
+        #     masks = torch.empty((self.batch_size, *self.mask_shape), device=self.device, dtype = self.dtype) # Initialize the masks tensor
 
-        # Pad the grid with reflection and sample a shift
-        if self.device == 'mps':
-            grid = F.pad(grid, self.pad_size, mode='reflect') # Pad the grid with reflection, meaning the values at the edges are reflected
-            shift = torch.randint(0, self.num_banks, size=(self.batch_size,)) # Randomly sample a shift
-            masks = torch.empty((self.batch_size, *self.mask_shape), dtype = self.dtype) # Initialize the masks tensor
-        else:
-            grid = F.pad(grid, self.pad_size, mode='reflect').to(self.device) # Pad the grid with reflection, meaning the values at the edges are reflected
-            shift = torch.randint(0, self.num_banks, size=(self.batch_size,), device=self.device) # Randomly sample a shift
-            masks = torch.empty((self.batch_size, *self.mask_shape), device=self.device, dtype = self.dtype) # Initialize the masks tensor
+        # # Generate the masks
+        # for mask_i in range(self.batch_size):
+        #     # Extract the mask from the grid with the correct shift and length
+        #     masks[mask_i] = grid[mask_i, :, shift[mask_i]:shift[mask_i] + self.length]
 
-        # Generate the masks
-        for mask_i in range(self.batch_size):
-            # Extract the mask from the grid with the correct shift and length
-            masks[mask_i] = grid[mask_i, :, shift[mask_i]:shift[mask_i] + self.length]
-
-        return masks, log_probs # Return the mask and the log probability of the mask - masks is of shape (batch_size, 1, 1, num_banks)
+        return grid.unsqueeze(1), log_probs # Return the mask and the log probability of the mask - masks is of shape (batch_size, 1, 1, num_banks)

@@ -40,6 +40,7 @@ def main(args):
     # Random ID of this run. For saving samples of signals
     chars = string.ascii_letters + string.digits  # a-zA-Z0-9
     random_ID = ''.join(random.choices(chars, k=8))
+    print('Random_ID: ', random_ID)
 
     ## Compute baseline attributions
     if args.use_baselines:
@@ -140,7 +141,7 @@ def main(args):
         print('FreqRISE computed')
     
     # SURL
-    surl_filename = 'surl' + filename_start + f'_lr_{args.lr}_alpha_{args.alpha}_beta_{args.beta}_decay_{args.decay}'
+    surl_filename = 'surl' + filename_start + f'_lr_{args.lr_S}_alpha_{args.alpha_S}_beta_{args.beta_S}_decay_{args.decay}'
     if args.use_SURL and (not surl_filename in attributions or args.debug_mode):
         # compute SURL
         print('Creating SURL')
@@ -163,17 +164,17 @@ def main(args):
                 meta_file.write(f'Batch Size: {args.batch_size}\n')
                 meta_file.write(f'Num Cells: {args.num_cells}\n')
                 meta_file.write(f'Use Softmax: {args.use_softmax}\n')
-                meta_file.write(f'Learning Rate: {args.lr}\n')
-                meta_file.write(f'Alpha: {args.alpha}\n')
-                meta_file.write(f'Beta: {args.beta}\n')
+                meta_file.write(f'Learning Rate: {args.lr_S}\n')
+                meta_file.write(f'Alpha: {args.alpha_S}\n')
+                meta_file.write(f'Beta: {args.beta_S}\n')
                 meta_file.write(f'Decay: {args.decay}')
-        surl = SURL(model, batch_size=args.batch_size, num_batches=num_batches, device=device, use_softmax=args.use_softmax, lr=args.lr, alpha=args.alpha, beta=args.beta, decay=args.decay, save_signals_path=random_ID_dir)
+        surl = SURL(model, batch_size=args.batch_size, num_batches=num_batches, device=device, use_softmax=args.use_softmax, lr=args.lr_S, alpha=args.alpha_S, beta=args.beta_S, decay=args.decay, save_signals_path=random_ID_dir)
         print('Computing SURL')
         attributions[surl_filename] = surl.forward_dataloader(test_loader, args.num_cells)
         print('SURL computed')
         
     # FiSURL
-    fisurl_filename = 'fisurl' + filename_start + f'_lr_{args.lr}_alpha_{args.alpha}_beta_{args.beta}_decay_{args.decay}'
+    fisurl_filename = 'fisurl' + filename_start + f'_lr_{args.lr_F}_alpha_{args.alpha_F}_beta_{args.beta_F}_decay_{args.decay}'
     if args.use_FiSURL and (not fisurl_filename in attributions or args.debug_mode):
         # compute FiSURL
         print('Creating FiSURL')
@@ -196,14 +197,14 @@ def main(args):
                 meta_file.write(f'Batch Size: {args.batch_size}\n')
                 meta_file.write(f'Num Banks: {args.num_banks}\n')
                 meta_file.write(f'Use Softmax: {args.use_softmax}\n')
-                meta_file.write(f'Learning Rate: {args.lr}\n')
-                meta_file.write(f'Alpha: {args.alpha}\n')
-                meta_file.write(f'Beta: {args.beta}\n')
+                meta_file.write(f'Learning Rate: {args.lr_F}\n')
+                meta_file.write(f'Alpha: {args.alpha_F}\n')
+                meta_file.write(f'Beta: {args.beta_F}\n')
                 meta_file.write(f'Decay: {args.decay}\n')
                 meta_file.write(f'Number of Taps: {args.num_taps}\n')
                 meta_file.write(f'Bandwidth: {args.bandwidth}\n')
                 meta_file.write(f'Keep Ratio: {args.keep_ratio}\n')
-        fisurl = FiSURL(model, num_taps=args.num_taps, num_banks=args.num_banks, fs=args.fs, bandwidth=args.bandwidth, batch_size=args.batch_size, num_batches=num_batches, keep_ratio=args.keep_ratio, device=device, use_softmax=args.use_softmax, lr=args.lr, alpha=args.alpha, beta=args.beta, decay=args.decay, save_signals_path=random_ID_dir)
+        fisurl = FiSURL(model, num_taps=args.num_taps, num_banks=args.num_banks, fs=args.fs, bandwidth=args.bandwidth, batch_size=args.batch_size, num_batches=num_batches, keep_ratio=args.keep_ratio, device=device, use_softmax=args.use_softmax, lr=args.lr_F, alpha=args.alpha_F, beta=args.beta_F, decay=args.decay, save_signals_path=random_ID_dir)
         print('Computing FiSURL')
         attributions[fisurl_filename] = fisurl.forward_dataloader(test_loader)
         print('FiSURL computed')
@@ -261,11 +262,14 @@ if __name__ == '__main__':
     # FreqRISE
     parser.add_argument('--probability_of_drop', type = float, default = 0.5, help='Probability of dropping')
     # Reinforce
-    parser.add_argument('--lr', type = float, default = 0.1, help='Learning rate for reinforce algorithm')
-    parser.add_argument('--alpha', type = float, default = 1.0, help='Weight of primary reward towards loss for reinforce algorithm')
-    parser.add_argument('--beta', type = float, default = 0.01, help='Weight of mask size towards loss for reinforce algorithm')
+    parser.add_argument('--lr_S', type = float, default = 0.1, help='Learning rate for reinforce algorithm')
+    parser.add_argument('--alpha_S', type = float, default = 1.0, help='Weight of primary reward towards loss for reinforce algorithm')
+    parser.add_argument('--beta_S', type = float, default = 0.01, help='Weight of mask size towards loss for reinforce algorithm')
     parser.add_argument('--decay', type = float, default = 0.9, help='weight of baseline towards loss for reinforce algorithm')
     # FiSURL
+    parser.add_argument('--lr_F', type = float, default = 0.1, help='Learning rate for reinforce algorithm')
+    parser.add_argument('--alpha_F', type = float, default = 1.0, help='Weight of primary reward towards loss for reinforce algorithm')
+    parser.add_argument('--beta_F', type = float, default = 0.01, help='Weight of mask size towards loss for reinforce algorithm')
     parser.add_argument('--num_banks', type = int, default = 128, help='Number of banks to use for FiSURL')
     parser.add_argument('--num_taps', type = int, default = 501, help='Number of taps to use for FiSURL')
     parser.add_argument('--fs', type = int, default = 8000, help='Sampling frequency to use for FiSURL')
@@ -276,11 +280,11 @@ if __name__ == '__main__':
     
     if args.job_idx and args.job_name:
         jobarray_vals = [
-            {'u_FR':False,'u_S':False,'u_FS':False,'nm':150,'bs':10,'nc':10,'us':False,'ub':True,'pd':0.5,'lr':0.1,'a':1.0,'b':0.01,'d':0.9,'nb':128,'nt':501,'fs':8000,'bw':None,'kr':0.05},
-            {'u_FR':False,'u_S':False,'u_FS':False,'nm':150,'bs':10,'nc':10,'us':False,'ub':True,'pd':0.5,'lr':0.1,'a':1.0,'b':0.01,'d':0.9,'nb':128,'nt':501,'fs':8000,'bw':None,'kr':0.05},
-            {'u_FR':True,'u_S':False,'u_FS':False,'nm':150,'bs':10,'nc':10,'us':False,'ub':False,'pd':0.5,'lr':0.1,'a':1.0,'b':0.01,'d':0.9,'nb':128,'nt':501,'fs':8000,'bw':None,'kr':0.05},
-            {'u_FR':True,'u_S':True,'u_FS':True,'nm':150,'bs':10,'nc':10,'us':False,'ub':False,'pd':0.5,'lr':0.1,'a':1.0,'b':0.01,'d':0.9,'nb':128,'nt':501,'fs':8000,'bw':None,'kr':0.05},
-            {'u_FR':False,'u_S':True,'u_FS':False,'nm':150,'bs':10,'nc':10,'us':False,'ub':False,'pd':0.5,'lr':0.1,'a':1.0,'b':0.01,'d':0.9,'nb':128,'nt':501,'fs':8000,'bw':None,'kr':0.05}
+            {'u_FR':False,'u_S':False,'u_FS':False,'nm':150,'bs':10,'nc':10,'us':False,'ub':True,'pd':0.5,'lr_S':0.1,'a_S':1.0,'b_S':0.01,'d':0.9,'lr_F':0.1,'a_F':1.0,'b_F':0.01,'nb':128,'nt':501,'fs':8000,'bw':None,'kr':0.05},
+            {'u_FR':False,'u_S':False,'u_FS':False,'nm':150,'bs':10,'nc':10,'us':False,'ub':True,'pd':0.5,'lr_S':0.1,'a_S':1.0,'b_S':0.01,'d':0.9,'lr_F':0.1,'a_F':1.0,'b_F':0.01,'nb':128,'nt':501,'fs':8000,'bw':None,'kr':0.05},
+            {'u_FR':True,'u_S':False,'u_FS':False,'nm':150,'bs':10,'nc':10,'us':False,'ub':False,'pd':0.5,'lr_S':0.1,'a_S':1.0,'b_S':0.01,'d':0.9,'lr_F':0.1,'a_F':1.0,'b_F':0.01,'nb':128,'nt':501,'fs':8000,'bw':None,'kr':0.05},
+            {'u_FR':True,'u_S':True,'u_FS':True,'nm':150,'bs':10,'nc':10,'us':False,'ub':False,'pd':0.5,'lr_S':0.1,'a_S':1.0,'b_S':0.01,'d':0.9,'lr_F':0.1,'a_F':1.0,'b_F':0.01,'nb':128,'nt':501,'fs':8000,'bw':None,'kr':0.05},
+            {'u_FR':False,'u_S':True,'u_FS':False,'nm':150,'bs':10,'nc':10,'us':False,'ub':False,'pd':0.5,'lr_S':0.1,'a_S':1.0,'b_S':0.01,'d':0.9,'lr_F':0.1,'a_F':1.0,'b_F':0.01,'nb':128,'nt':501,'fs':8000,'bw':None,'kr':0.05}
         ]
         
         job_vals = jobarray_vals[args.job_idx]
@@ -293,10 +297,13 @@ if __name__ == '__main__':
         args.use_softmax =          job_vals['us']
         args.use_baselines =        job_vals['ub']
         args.probability_of_drop =  job_vals['pd']
-        args.lr =                   job_vals['lr']
-        args.alpha =                job_vals['a']
-        args.beta =                 job_vals['b']
+        args.lr_S =                 job_vals['lr_S']
+        args.alpha_S =              job_vals['a_S']
+        args.beta_S =               job_vals['b_S']
         args.decay =                job_vals['d']
+        args.lr_F =                 job_vals['lr_F']
+        args.alpha_F =              job_vals['a_F']
+        args.beta_F =               job_vals['b_F']
         args.num_banks =            job_vals['nb']
         args.num_taps =             job_vals['nt']
         args.fs =                   job_vals['fs']
@@ -305,7 +312,10 @@ if __name__ == '__main__':
         
     if args.dataset == 'synthetic' and args.use_FiSURL:
         assert args.synth_sig_len == args.fs, "Synthetic signal length should be equal to fs if using FiSURL, as that would always be the case for 1 second signals"
-        
+    
+    if args.dataset == 'AudioMNIST' and args.use_FiSURL:
+        assert 8000 == args.fs, "AudioMNIST signal length should be equal to fs if using FiSURL, as that would always be the case for 1 second signals"
+    
     if args.dataset == 'synthetic' and (args.use_FreqRISE or args.use_SURL or args.use_FiSURL):
         assert args.synth_sig_len > args.num_cells, "Number of cells should be lower than synth_sig_len if using synthetic dataset"
         

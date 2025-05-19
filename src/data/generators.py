@@ -47,7 +47,7 @@ def synthetic_dataset_generator(
             for _ in range(np.random.randint(0, 8)):
                 peak_pos = np.random.randint(0, length // 2)
                 peak_height = np.random.uniform(0.5, 2.0)
-                if all(abs(peak_pos - f) >= 2 for f in frequency_classes):
+                if all(abs(peak_pos - f) >= 5 for f in frequency_classes):
                     phase = np.random.uniform(0, 2 * np.pi)
                     data[i] += np.sin(peak_height * np.pi * peak_pos / length * t + phase)
 

@@ -97,7 +97,6 @@ class FiSURL(nn.Module): # FiSURL: Filterbank Sampling Using Reinforcement Learn
                 next_index = int(np.ceil(i * self.bandwidth))
                 masks_up[:, :, :, index:next_index] = masks[:, :, :, i-1].unsqueeze(-1)
                 index = next_index
-
             sals = torch.matmul(predictions.transpose(0,1).float(), masks_up.view(self.batch_size, -1).abs().float()).transpose(0,1).unsqueeze(0) # Compute saliency
             p.append(sals)
 
@@ -129,7 +128,6 @@ class FiSURL(nn.Module): # FiSURL: Filterbank Sampling Using Reinforcement Learn
         # Selects the importance values for the given class y
         importance = importance.cpu().squeeze()[...,target_class] # /kwargs.get('probability_of_drop')
         importance = (importance - importance.min()) / (importance.max() - importance.min()) # min max normalize
-
         if self.save_signals_path:
             run_time = time.time() - start_time
             output_dict = {

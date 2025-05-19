@@ -3,12 +3,12 @@
 # Define the variables
 # ! Manually add the tag "--incrementing_masks" to both the jobarray and merge job if you want to use the incrementing masks
 # ! The same applies to the tag "--no_random_peaks" if you want no random peaks in the synthetic data
-jobname="compute_attributions_test"
+jobname="compute_attributions_test_with_signals_synthetic"
 merge_jobname="merge_${jobname}"
 
 dataset="synthetic"
 output_path="outputs"
-n_samples=50
+n_samples=40
 
 # If using AudioMNIST
 labeltype="digit" 
@@ -20,22 +20,24 @@ synth_sig_len=100
 # Generate the jobarray.sh
 cat <<EOF > jobarray.sh
 #!/bin/bash
-#BSUB -q voltash
+#BSUB -q hpc
 #BSUB -J ${jobname}[1-11]
 #BSUB -n 4
 #BSUB -W 00:30
 #BSUB -R "span[hosts=1]"
 #BSUB -R "rusage[mem=2GB]"
-#BSUB -o outputs/hpclogs/${jobname}_%J/%I.out
-#BSUB -e outputs/hpclogs/${jobname}_%J/%I.err
+#BSUB -o outputs/hpclogs/jobarrays/${jobname}_%J_%I.out
+#BSUB -e outputs/hpclogs/jobarrays/${jobname}_%J_%I.err
 
 source ~/miniforge3/etc/profile.d/conda.sh
 conda activate freqrise
 
 lscpu
 echo "-----------------------------------------"
+echo "Job idx: \$LSB_JOBINDEX, Job ID: \${LSB_JOBID}, Job name: $jobname"
+echo "-----------------------------------------"
 python main_attributions.py \\
-    --job_idx $LSB_JOBINDEX \\
+    --job_idx \$LSB_JOBINDEX \\
     --job_name $jobname \\
     --data_path data/ \\
     --model_path models \\
@@ -45,6 +47,7 @@ python main_attributions.py \\
     --synth_sig_len $synth_sig_len \\
     --labeltype $labeltype \\
     --n_samples $n_samples \\
+    --save_signals \\
 EOF
 
 # Submit the job
@@ -74,7 +77,7 @@ lscpu
 echo "-----------------------------------------"
 python merge_outputs_from_jobarray.py \\
     --job_name $jobname \\
-    --job_id $LSB_JOBID \\
+    --job_id \$LSB_JOBID \\
     --output_path $output_path \\
     --dataset $dataset \\
     --noise_level $noise_level \\

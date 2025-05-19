@@ -2,6 +2,8 @@ import torch
 import argparse
 import pickle
 import os
+import string
+import random
 
 from src.explainability import FreqRISE, FiSURL, SURL, compute_gradient_scores
 from src.data import load_data
@@ -222,6 +224,7 @@ def main(args):
         attributions['labels'] = torch.cat(labels, dim=0)
 
     # save attributions
+    os.makedirs(os.path.dirname(output_path), exist_ok=True)
     with open(output_path, 'wb') as f:
         pickle.dump(attributions, f)
 
@@ -280,7 +283,8 @@ if __name__ == '__main__':
     args = parser.parse_args()    
     
     if args.job_idx and args.job_name:
-        
+        chars = string.ascii_letters + string.digits  # a-zA-Z0-9
+        args.random_ID = ''.join(random.choices(chars, k=8))
         # AudioMNIST test_vals
         audiomnist_jobarray_vals = [
             {'u_FR':True,'u_S':True,'u_FS':True,'nm':10000,'bs':250,'nc':128,'us':False,'ub':True,'pd':0.5,'lr_S':0.1,'a_S':1.00,'b_S':0.01,'d':0.9,'lr_F':0.1,'a_F':1.00,'b_F':0.01,'nb':128,'nt':501,'bw':None,'kr':0.05},

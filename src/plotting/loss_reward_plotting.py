@@ -64,29 +64,39 @@ if __name__ == "__main__":
     else:
         method_names = [args.method_name]
     
-    for method_name in method_names:
-        if os.path.exists(os.path.join(args.output_path, 'samples', f'{args.sample_id}{'_debug' if args.debug_mode else ''}', method_name.lower())):
-            os.makedirs(os.path.join(args.output_path, 'figures', 'samples', f'{args.sample_id}{'_debug' if args.debug_mode else ''}', method_name), exist_ok=True)
-            input_paths = []
-            output_paths = []
-            if args.sample_idx is None:
-                search_dir = os.path.join(args.output_path, 'samples', f'{args.sample_id}{'_debug' if args.debug_mode else ''}', method_name.lower())
-                for i in range(len(os.listdir(search_dir)) - 1):
-                    input_path = os.path.join(search_dir, f"sample_{i}.pkl")
-                    output_path = os.path.join(args.output_path, 'figures', 'samples', f'{args.sample_id}{'_debug' if args.debug_mode else ''}', method_name, f'{i}.png')
+    sample_ids = []
+    if not args.sample_id:
+        parent_dir = os.path.join(args.output_path, 'samples')
+        for name in os.listdir(parent_dir):
+            if os.path.isdir(os.path.join(parent_dir, name)):
+                sample_ids.append(name)
+    else:
+        sample_ids.append(args.sample_id)
+
+    for sample_id in sample_ids:
+        for method_name in method_names:
+            if os.path.exists(os.path.join(args.output_path, 'samples', f'{sample_id}{'_debug' if args.debug_mode else ''}', method_name.lower())):
+                os.makedirs(os.path.join(args.output_path, 'figures', 'samples', f'{sample_id}{'_debug' if args.debug_mode else ''}', method_name), exist_ok=True)
+                input_paths = []
+                output_paths = []
+                if args.sample_idx is None:
+                    search_dir = os.path.join(args.output_path, 'samples', f'{sample_id}{'_debug' if args.debug_mode else ''}', method_name.lower())
+                    for i in range(len(os.listdir(search_dir)) - 1):
+                        input_path = os.path.join(search_dir, f"sample_{i}.pkl")
+                        output_path = os.path.join(args.output_path, 'figures', 'samples', f'{sample_id}{'_debug' if args.debug_mode else ''}', method_name, f'{i}.png')
+                        input_paths.append(input_path)
+                        output_paths.append(output_path)
+                else:
+                    input_path = os.path.join(args.output_path, 'samples', f'{sample_id}{'_debug' if args.debug_mode else ''}', method_name.lower(), f"sample_{args.sample_idx}.pkl")
+                    output_path = os.path.join(args.output_path, 'figures', 'samples', f'{sample_id}{'_debug' if args.debug_mode else ''}', method_name, f'{args.sample_idx}.png')
                     input_paths.append(input_path)
                     output_paths.append(output_path)
-            else:
-                input_path = os.path.join(args.output_path, 'samples', f'{args.sample_id}{'_debug' if args.debug_mode else ''}', method_name.lower(), f"sample_{args.sample_idx}.pkl")
-                output_path = os.path.join(args.output_path, 'figures', 'samples', f'{args.sample_id}{'_debug' if args.debug_mode else ''}', method_name, f'{args.sample_idx}.png')
-                input_paths.append(input_path)
-                output_paths.append(output_path)
-            
-            for input_path, output_path in zip(input_paths, output_paths):
-                if args.plot_type == 'both':
-                    plot_loss(input_path, output_path.replace('.png', '_loss.png'))
-                    plot_rewards(input_path, output_path.replace('.png', '_rewards.png'))
-                elif args.plot_type == 'loss':
-                    plot_loss(input_path, output_path.replace('.png', '_loss.png'))
-                elif args.plot_type == 'rewards':
-                    plot_rewards(input_path, output_path.replace('.png', '_rewards.png'))
+                
+                for input_path, output_path in zip(input_paths, output_paths):
+                    if args.plot_type == 'both':
+                        plot_loss(input_path, output_path.replace('.png', '_loss.png'))
+                        plot_rewards(input_path, output_path.replace('.png', '_rewards.png'))
+                    elif args.plot_type == 'loss':
+                        plot_loss(input_path, output_path.replace('.png', '_loss.png'))
+                    elif args.plot_type == 'rewards':
+                        plot_rewards(input_path, output_path.replace('.png', '_rewards.png'))

@@ -111,7 +111,6 @@ scripts = [
         "--num_banks", vars['num_banks'], 
         "--num_taps", vars['num_taps'],
         "--keep_ratio", vars['keep_ratio'], 
-        "--fs", vars['fs'],
         "--random_ID", random_ID
     ],
     ["python", "main_evaluation.py", 

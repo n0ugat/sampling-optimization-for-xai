@@ -31,6 +31,7 @@ def plot_saliency_with_fft(input_path, output_path, method_name=None):
     plt.ylabel('Magnitude')
     plt.title(f'{method_name} ({'Correct' if pred_correct else 'Incorrect'} Prediction)')
     plt.tight_layout()
+    os.makedirs(os.path.dirname(output_path), exist_ok=True)
     plt.savefig(output_path)
     plt.close()
     
@@ -64,7 +65,6 @@ if __name__ == "__main__":
     for sample_id in sample_ids:
         for method_name in method_names:
             if os.path.exists(os.path.join(args.output_path, 'samples', f'{sample_id}{'_debug' if args.debug_mode else ''}', method_name.lower())):
-                os.makedirs(os.path.join(args.output_path, 'figures', 'samples', f'{sample_id}{'_debug' if args.debug_mode else ''}', method_name), exist_ok=True)
                 input_paths = []
                 output_paths = []
                 if args.sample_idx is None:

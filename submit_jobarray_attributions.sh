@@ -3,15 +3,15 @@
 # Define the variables
 # ! Manually add the tag "--incrementing_masks" to both the jobarray and merge job if you want to use the incrementing masks
 # ! The same applies to the tag "--no_random_peaks" if you want no random peaks in the synthetic data
-jobname="compute_attributions_test_with_signals_AudioMNIST_gender"
+jobname="compute_attributions_test_with_signals_synthetic"
 merge_jobname="merge_${jobname}"
 
-dataset="AudioMNIST"
+dataset="synthetic"
 output_path="outputs"
 n_samples=10
 
 # If using AudioMNIST
-labeltype="gender" 
+labeltype="digit" 
 
 # If using synthetic
 noise_level=0.0
@@ -21,9 +21,9 @@ synth_sig_len=100
 cat <<EOF > jobarray.sh
 #!/bin/bash
 #BSUB -q gpuv100
-#BSUB -J ${jobname}[1-14]
+#BSUB -J ${jobname}[1-18]
 #BSUB -n 4
-#BSUB -W 08:00
+#BSUB -W 00:30
 #BSUB -R "span[hosts=1]"
 #BSUB -R "rusage[mem=2GB]"
 #BSUB -o outputs/hpclogs/jobarrays/${jobname}_%J_%I.out

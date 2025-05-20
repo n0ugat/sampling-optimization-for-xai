@@ -203,9 +203,8 @@ def main(args):
                 meta_file.write(f'Beta: {args.beta_F}\n')
                 meta_file.write(f'Decay: {args.decay}\n')
                 meta_file.write(f'Number of Taps: {args.num_taps}\n')
-                meta_file.write(f'Bandwidth: {args.bandwidth}\n')
                 meta_file.write(f'Keep Ratio: {args.keep_ratio}\n')
-        fisurl = FiSURL(model, num_taps=args.num_taps, num_banks=args.num_banks, fs=args.fs, bandwidth=args.bandwidth, batch_size=args.batch_size, num_batches=num_batches, keep_ratio=args.keep_ratio, device=device, use_softmax=args.use_softmax, lr=args.lr_F, alpha=args.alpha_F, beta=args.beta_F, decay=args.decay, save_signals_path=random_ID_dir)
+        fisurl = FiSURL(model, num_taps=args.num_taps, num_banks=args.num_banks, batch_size=args.batch_size, num_batches=num_batches, keep_ratio=args.keep_ratio, device=device, use_softmax=args.use_softmax, lr=args.lr_F, alpha=args.alpha_F, beta=args.beta_F, decay=args.decay, save_signals_path=random_ID_dir)
         print('Computing FiSURL')
         attributions[fisurl_filename] = (fisurl.forward_dataloader(test_loader), args.n_masks) if args.incrementing_masks else fisurl.forward_dataloader(test_loader)
         print('FiSURL computed')
@@ -276,54 +275,88 @@ if __name__ == '__main__':
     parser.add_argument('--beta_F', type = float, default = 0.01, help='Weight of mask size towards loss for reinforce algorithm')
     parser.add_argument('--num_banks', type = int, default = 128, help='Number of banks to use for FiSURL')
     parser.add_argument('--num_taps', type = int, default = 501, help='Number of taps to use for FiSURL')
-    parser.add_argument('--fs', type = int, default = 8000, help='Sampling frequency to use for FiSURL')
-    parser.add_argument('--bandwidth', type = float, default = None, help='Bandwidth to use for FiSURL')
     parser.add_argument('--keep_ratio', type = float, default = 0.05, help='Ratio parameter below which the sparsity constraint is ignored for FiSURL')
     
-    args = parser.parse_args()    
+    args = parser.parse_args()
     
     if args.job_idx and args.job_name:
         chars = string.ascii_letters + string.digits  # a-zA-Z0-9
         args.random_ID = ''.join(random.choices(chars, k=8))
-        # AudioMNIST test_vals
-        audiomnist_jobarray_vals = [
-            {'u_FR':True,'u_S':True,'u_FS':True,'nm':10000,'bs':250,'nc':128,'us':False,'ub':True,'pd':0.5,'lr_S':0.1,'a_S':1.00,'b_S':0.01,'d':0.9,'lr_F':0.1,'a_F':1.00,'b_F':0.01,'nb':128,'nt':501,'bw':None,'kr':0.05},
-            {'u_FR':True,'u_S':True,'u_FS':True,'nm':10000,'bs':250,'nc':128,'us':False,'ub':True,'pd':0.5,'lr_S':0.2,'a_S':1.00,'b_S':0.01,'d':0.9,'lr_F':0.2,'a_F':1.00,'b_F':0.01,'nb':128,'nt':501,'bw':None,'kr':0.05},
-            {'u_FR':True,'u_S':True,'u_FS':True,'nm':10000,'bs':250,'nc':128,'us':False,'ub':True,'pd':0.5,'lr_S':0.5,'a_S':1.00,'b_S':0.01,'d':0.9,'lr_F':0.5,'a_F':1.00,'b_F':0.01,'nb':128,'nt':501,'bw':None,'kr':0.05},
-            {'u_FR':True,'u_S':True,'u_FS':True,'nm':10000,'bs':250,'nc':128,'us':False,'ub':True,'pd':0.5,'lr_S':1.0,'a_S':1.00,'b_S':0.01,'d':0.9,'lr_F':1.0,'a_F':1.00,'b_F':0.01,'nb':128,'nt':501,'bw':None,'kr':0.05},
-            {'u_FR':True,'u_S':True,'u_FS':True,'nm':10000,'bs':250,'nc':128,'us':False,'ub':True,'pd':0.5,'lr_S':0.8,'a_S':1.00,'b_S':0.01,'d':0.9,'lr_F':0.8,'a_F':1.00,'b_F':0.01,'nb':128,'nt':501,'bw':None,'kr':0.05},
-            {'u_FR':True,'u_S':True,'u_FS':True,'nm':10000,'bs':250,'nc':128,'us':False,'ub':True,'pd':0.5,'lr_S':0.5,'a_S':1.00,'b_S':0.01,'d':0.9,'lr_F':0.5,'a_F':1.00,'b_F':0.01,'nb':128,'nt':501,'bw':None,'kr':0.05},
-            {'u_FR':True,'u_S':True,'u_FS':True,'nm':10000,'bs':250,'nc':128,'us':False,'ub':True,'pd':0.5,'lr_S':0.5,'a_S':1.00,'b_S':1.00,'d':0.9,'lr_F':0.5,'a_F':1.00,'b_F':1.00,'nb':128,'nt':501,'bw':None,'kr':0.05},
-            {'u_FR':True,'u_S':True,'u_FS':True,'nm':10000,'bs':250,'nc':128,'us':False,'ub':True,'pd':0.5,'lr_S':0.5,'a_S':1.00,'b_S':0.10,'d':0.9,'lr_F':0.5,'a_F':1.00,'b_F':0.10,'nb':128,'nt':501,'bw':None,'kr':0.05},
-            {'u_FR':True,'u_S':True,'u_FS':True,'nm':10000,'bs':250,'nc':128,'us':False,'ub':True,'pd':0.5,'lr_S':0.5,'a_S':10.0,'b_S':0.01,'d':0.9,'lr_F':0.5,'a_F':10.0,'b_F':0.01,'nb':128,'nt':501,'bw':None,'kr':0.05},
-            {'u_FR':True,'u_S':True,'u_FS':True,'nm':10000,'bs':250,'nc':128,'us':False,'ub':True,'pd':0.5,'lr_S':0.5,'a_S':1.00,'b_S':10.0,'d':0.9,'lr_F':0.5,'a_F':1.00,'b_F':10.0,'nb':128,'nt':501,'bw':None,'kr':0.05},
-            {'u_FR':True,'u_S':True,'u_FS':True,'nm':10000,'bs':250,'nc':128,'us':False,'ub':True,'pd':0.5,'lr_S':0.5,'a_S':1.00,'b_S':0.50,'d':0.9,'lr_F':0.5,'a_F':1.00,'b_F':0.50,'nb':128,'nt':501,'bw':None,'kr':0.05},
-            {'u_FR':True,'u_S':True,'u_FS':True,'nm':10000,'bs':250,'nc':250,'us':False,'ub':True,'pd':0.5,'lr_S':0.5,'a_S':1.00,'b_S':0.01,'d':0.9,'lr_F':0.5,'a_F':1.00,'b_F':0.01,'nb':250,'nt':501,'bw':None,'kr':0.05},
-            {'u_FR':True,'u_S':True,'u_FS':True,'nm':10000,'bs':250,'nc':500,'us':False,'ub':True,'pd':0.5,'lr_S':0.5,'a_S':1.00,'b_S':0.01,'d':0.9,'lr_F':0.5,'a_F':1.00,'b_F':0.01,'nb':500,'nt':501,'bw':None,'kr':0.05},
-            {'u_FR':True,'u_S':True,'u_FS':True,'nm':10000,'bs':250,'nc': 50,'us':False,'ub':True,'pd':0.5,'lr_S':0.5,'a_S':1.00,'b_S':0.01,'d':0.9,'lr_F':0.5,'a_F':1.00,'b_F':0.01,'nb': 50,'nt':501,'bw':None,'kr':0.05}
+        # AudioMNIST digit test_vals
+        audiomnist_d_jobarray_vals = [
+            {'u_FR':True,'u_S':True,'u_FS':True,'nm':10000,'bs':250,'nc': 50,'us':False,'ub':True,'pd':0.5,'lr_S': 0.2,'a_S':1.00,'b_S':1.00,'d':0.9,'lr_F': 0.5,'a_F':1.00,'b_F':1.00,'nb': 50,'nt':501,'kr':0.05},
+            {'u_FR':True,'u_S':True,'u_FS':True,'nm':10000,'bs':500,'nc': 50,'us':False,'ub':True,'pd':0.5,'lr_S': 0.2,'a_S':1.00,'b_S':1.00,'d':0.9,'lr_F': 0.5,'a_F':1.00,'b_F':1.00,'nb': 50,'nt':501,'kr':0.05},
+            {'u_FR':True,'u_S':True,'u_FS':True,'nm':10000,'bs':128,'nc': 50,'us':False,'ub':True,'pd':0.5,'lr_S': 0.2,'a_S':1.00,'b_S':1.00,'d':0.9,'lr_F': 0.5,'a_F':1.00,'b_F':1.00,'nb': 50,'nt':501,'kr':0.05},
+            {'u_FR':True,'u_S':True,'u_FS':True,'nm':10000,'bs': 64,'nc': 50,'us':False,'ub':True,'pd':0.5,'lr_S': 0.2,'a_S':1.00,'b_S':1.00,'d':0.9,'lr_F': 0.5,'a_F':1.00,'b_F':1.00,'nb': 50,'nt':501,'kr':0.05},
+            {'u_FR':True,'u_S':True,'u_FS':True,'nm':10000,'bs':250,'nc': 20,'us':False,'ub':True,'pd':0.5,'lr_S': 0.2,'a_S':1.00,'b_S':1.00,'d':0.9,'lr_F': 0.5,'a_F':1.00,'b_F':1.00,'nb': 20,'nt':501,'kr':0.05},
+            {'u_FR':True,'u_S':True,'u_FS':True,'nm':10000,'bs':250,'nc': 35,'us':False,'ub':True,'pd':0.5,'lr_S': 0.2,'a_S':1.00,'b_S':1.00,'d':0.9,'lr_F': 0.5,'a_F':1.00,'b_F':1.00,'nb': 35,'nt':501,'kr':0.05},
+            {'u_FR':True,'u_S':True,'u_FS':True,'nm':10000,'bs':250,'nc': 80,'us':False,'ub':True,'pd':0.5,'lr_S': 0.2,'a_S':1.00,'b_S':1.00,'d':0.9,'lr_F': 0.5,'a_F':1.00,'b_F':1.00,'nb': 80,'nt':501,'kr':0.05},
+            {'u_FR':True,'u_S':True,'u_FS':True,'nm':10000,'bs':250,'nc': 50,'us':False,'ub':True,'pd':0.5,'lr_S':0.01,'a_S':1.00,'b_S':1.00,'d':0.9,'lr_F':0.01,'a_F':1.00,'b_F':1.00,'nb': 50,'nt':501,'kr':0.05},
+            {'u_FR':True,'u_S':True,'u_FS':True,'nm':10000,'bs':250,'nc': 50,'us':False,'ub':True,'pd':0.5,'lr_S':10.0,'a_S':1.00,'b_S':1.00,'d':0.9,'lr_F':10.0,'a_F':1.00,'b_F':1.00,'nb': 50,'nt':501,'kr':0.05},
+            {'u_FR':True,'u_S':True,'u_FS':True,'nm':10000,'bs':250,'nc': 50,'us':False,'ub':True,'pd':0.5,'lr_S': 0.2,'a_S':5.00,'b_S':1.00,'d':0.9,'lr_F': 0.5,'a_F':5.00,'b_F':1.00,'nb': 50,'nt':501,'kr':0.05},
+            {'u_FR':True,'u_S':True,'u_FS':True,'nm':10000,'bs':250,'nc': 50,'us':False,'ub':True,'pd':0.5,'lr_S': 0.2,'a_S':1.00,'b_S':5.00,'d':0.9,'lr_F': 0.5,'a_F':1.00,'b_F':5.00,'nb': 50,'nt':501,'kr':0.05},
+            {'u_FR':True,'u_S':True,'u_FS':True,'nm':10000,'bs':250,'nc': 50,'us':False,'ub':True,'pd':0.5,'lr_S': 0.2,'a_S':1.00,'b_S':2.00,'d':0.9,'lr_F': 0.5,'a_F':1.00,'b_F':2.00,'nb': 50,'nt':501,'kr':0.05},
+            {'u_FR':True,'u_S':True,'u_FS':True,'nm':10000,'bs':250,'nc': 50,'us':False,'ub':True,'pd':0.5,'lr_S':1.00,'a_S':1.00,'b_S':5.00,'d':0.9,'lr_F':1.00,'a_F':1.00,'b_F':5.00,'nb': 50,'nt':501,'kr':0.05},
+            {'u_FR':True,'u_S':True,'u_FS':True,'nm':10000,'bs':250,'nc': 50,'us':False,'ub':True,'pd':0.5,'lr_S':5.00,'a_S':1.00,'b_S':5.00,'d':0.9,'lr_F':5.00,'a_F':1.00,'b_F':5.00,'nb': 50,'nt':501,'kr':0.05},
+            {'u_FR':True,'u_S':True,'u_FS':True,'nm':10000,'bs':250,'nc': 50,'us':False,'ub':True,'pd':0.5,'lr_S':3.00,'a_S':1.00,'b_S':5.00,'d':0.9,'lr_F':3.00,'a_F':1.00,'b_F':5.00,'nb': 50,'nt':501,'kr':0.05},
+            {'u_FR':True,'u_S':True,'u_FS':True,'nm':10000,'bs':250,'nc': 50,'us':False,'ub':True,'pd':0.5,'lr_S': 0.2,'a_S':0.30,'b_S':1.00,'d':0.9,'lr_F': 0.5,'a_F':0.30,'b_F':1.00,'nb': 50,'nt':501,'kr':0.05},
+            {'u_FR':True,'u_S':True,'u_FS':True,'nm':10000,'bs':250,'nc': 50,'us':False,'ub':True,'pd':0.5,'lr_S':1.00,'a_S':0.30,'b_S':1.00,'d':0.9,'lr_F':1.00,'a_F':0.30,'b_F':1.00,'nb': 50,'nt':501,'kr':0.05},
+            {'u_FR':True,'u_S':True,'u_FS':True,'nm':10000,'bs': 64,'nc': 50,'us':False,'ub':True,'pd':0.5,'lr_S':2.00,'a_S':0.30,'b_S':5.00,'d':0.9,'lr_F':2.00,'a_F':0.30,'b_F':5.00,'nb': 50,'nt':501,'kr':0.05}
+        ]
+        
+        # AudioMNIST gender test_vals
+        audiomnist_g_jobarray_vals = [
+            {'u_FR':True,'u_S':True,'u_FS':True,'nm':10000,'bs':250,'nc': 50,'us':False,'ub':True,'pd':0.5,'lr_S': 0.1,'a_S':1.00,'b_S':0.01,'d':0.9,'lr_F': 0.1,'a_F':1.00,'b_F':0.01,'nb': 50,'nt':501,'kr':0.05},
+            {'u_FR':True,'u_S':True,'u_FS':True,'nm':10000,'bs':500,'nc': 50,'us':False,'ub':True,'pd':0.5,'lr_S': 0.1,'a_S':1.00,'b_S':0.01,'d':0.9,'lr_F': 0.1,'a_F':1.00,'b_F':0.01,'nb': 50,'nt':501,'kr':0.05},
+            {'u_FR':True,'u_S':True,'u_FS':True,'nm':10000,'bs':128,'nc': 50,'us':False,'ub':True,'pd':0.5,'lr_S': 0.1,'a_S':1.00,'b_S':0.01,'d':0.9,'lr_F': 0.1,'a_F':1.00,'b_F':0.01,'nb': 50,'nt':501,'kr':0.05},
+            {'u_FR':True,'u_S':True,'u_FS':True,'nm':10000,'bs': 64,'nc': 50,'us':False,'ub':True,'pd':0.5,'lr_S': 0.1,'a_S':1.00,'b_S':0.01,'d':0.9,'lr_F': 0.1,'a_F':1.00,'b_F':0.01,'nb': 50,'nt':501,'kr':0.05},
+            {'u_FR':True,'u_S':True,'u_FS':True,'nm':10000,'bs':250,'nc': 25,'us':False,'ub':True,'pd':0.5,'lr_S': 0.1,'a_S':1.00,'b_S':0.01,'d':0.9,'lr_F': 0.1,'a_F':1.00,'b_F':0.01,'nb': 25,'nt':501,'kr':0.05},
+            {'u_FR':True,'u_S':True,'u_FS':True,'nm':10000,'bs':250,'nc': 10,'us':False,'ub':True,'pd':0.5,'lr_S': 0.1,'a_S':1.00,'b_S':0.01,'d':0.9,'lr_F': 0.1,'a_F':1.00,'b_F':0.01,'nb': 10,'nt':501,'kr':0.05},
+            {'u_FR':True,'u_S':True,'u_FS':True,'nm':10000,'bs':250,'nc':  5,'us':False,'ub':True,'pd':0.5,'lr_S': 0.1,'a_S':1.00,'b_S':0.01,'d':0.9,'lr_F': 0.1,'a_F':1.00,'b_F':0.01,'nb':  5,'nt':501,'kr':0.05},
+            {'u_FR':True,'u_S':True,'u_FS':True,'nm':10000,'bs':250,'nc': 50,'us':False,'ub':True,'pd':0.5,'lr_S': 1.0,'a_S':1.00,'b_S':0.01,'d':0.9,'lr_F': 1.0,'a_F':1.00,'b_F':0.01,'nb': 50,'nt':501,'kr':0.05},
+            {'u_FR':True,'u_S':True,'u_FS':True,'nm':10000,'bs':250,'nc': 50,'us':False,'ub':True,'pd':0.5,'lr_S': 3.0,'a_S':1.00,'b_S':0.01,'d':0.9,'lr_F': 3.0,'a_F':1.00,'b_F':0.01,'nb': 50,'nt':501,'kr':0.05},
+            {'u_FR':True,'u_S':True,'u_FS':True,'nm':10000,'bs':250,'nc': 50,'us':False,'ub':True,'pd':0.5,'lr_S': 5.0,'a_S':1.00,'b_S':0.01,'d':0.9,'lr_F': 5.0,'a_F':1.00,'b_F':0.01,'nb': 50,'nt':501,'kr':0.05},
+            {'u_FR':True,'u_S':True,'u_FS':True,'nm':10000,'bs':250,'nc': 50,'us':False,'ub':True,'pd':0.5,'lr_S':10.0,'a_S':1.00,'b_S':0.01,'d':0.9,'lr_F':10.0,'a_F':1.00,'b_F':0.01,'nb': 50,'nt':501,'kr':0.05},
+            {'u_FR':True,'u_S':True,'u_FS':True,'nm':10000,'bs':250,'nc': 50,'us':False,'ub':True,'pd':0.5,'lr_S': 1.0,'a_S':1.00,'b_S': 1.0,'d':0.9,'lr_F': 1.0,'a_F':1.00,'b_F': 2.0,'nb': 50,'nt':501,'kr':0.05},
+            {'u_FR':True,'u_S':True,'u_FS':True,'nm':10000,'bs':250,'nc': 50,'us':False,'ub':True,'pd':0.5,'lr_S': 3.0,'a_S':1.00,'b_S': 1.0,'d':0.9,'lr_F': 3.0,'a_F':1.00,'b_F': 1.0,'nb': 50,'nt':501,'kr':0.05},
+            {'u_FR':True,'u_S':True,'u_FS':True,'nm':10000,'bs':250,'nc': 50,'us':False,'ub':True,'pd':0.5,'lr_S': 5.0,'a_S':1.00,'b_S': 1.0,'d':0.9,'lr_F': 5.0,'a_F':1.00,'b_F': 1.0,'nb': 50,'nt':501,'kr':0.05},
+            {'u_FR':True,'u_S':True,'u_FS':True,'nm':10000,'bs':250,'nc': 50,'us':False,'ub':True,'pd':0.5,'lr_S':10.0,'a_S':1.00,'b_S': 1.0,'d':0.9,'lr_F':10.0,'a_F':1.00,'b_F': 1.0,'nb': 50,'nt':501,'kr':0.05},
+            {'u_FR':True,'u_S':True,'u_FS':True,'nm':10000,'bs':250,'nc': 50,'us':False,'ub':True,'pd':0.5,'lr_S': 1.0,'a_S':1.00,'b_S': 5.0,'d':0.9,'lr_F': 1.0,'a_F':1.00,'b_F': 5.0,'nb': 50,'nt':501,'kr':0.05},
+            {'u_FR':True,'u_S':True,'u_FS':True,'nm':10000,'bs':250,'nc': 50,'us':False,'ub':True,'pd':0.5,'lr_S': 5.0,'a_S':1.00,'b_S': 5.0,'d':0.9,'lr_F': 5.0,'a_F':1.00,'b_F': 5.0,'nb': 50,'nt':501,'kr':0.05},
+            {'u_FR':True,'u_S':True,'u_FS':True,'nm':10000,'bs':250,'nc': 50,'us':False,'ub':True,'pd':0.5,'lr_S':10.0,'a_S':1.00,'b_S': 5.0,'d':0.9,'lr_F':10.0,'a_F':1.00,'b_F': 5.0,'nb': 50,'nt':501,'kr':0.05},
         ]
         
         # Synthetic test_vals, For synth sig len = 100
         synthetic_jobarray_vals = [
-            {'u_FR':True,'u_S':True,'u_FS':True,'nm':10000,'bs':250,'nc':15,'us':False,'ub':True,'pd':0.5,'lr_S':0.1,'a_S':1.00,'b_S':0.01,'d':0.9,'lr_F':0.1,'a_F':1.00,'b_F':0.01,'nb':15,'nt':501,'bw':None,'kr':0.05},
-            {'u_FR':True,'u_S':True,'u_FS':True,'nm':10000,'bs':250,'nc':15,'us':False,'ub':True,'pd':0.5,'lr_S':0.2,'a_S':1.00,'b_S':0.01,'d':0.9,'lr_F':0.2,'a_F':1.00,'b_F':0.01,'nb':15,'nt':501,'bw':None,'kr':0.05},
-            {'u_FR':True,'u_S':True,'u_FS':True,'nm':10000,'bs':250,'nc':15,'us':False,'ub':True,'pd':0.5,'lr_S':0.5,'a_S':1.00,'b_S':0.01,'d':0.9,'lr_F':0.5,'a_F':1.00,'b_F':0.01,'nb':15,'nt':501,'bw':None,'kr':0.05},
-            {'u_FR':True,'u_S':True,'u_FS':True,'nm':10000,'bs':250,'nc':15,'us':False,'ub':True,'pd':0.5,'lr_S':1.0,'a_S':1.00,'b_S':0.01,'d':0.9,'lr_F':1.0,'a_F':1.00,'b_F':0.01,'nb':15,'nt':501,'bw':None,'kr':0.05},
-            {'u_FR':True,'u_S':True,'u_FS':True,'nm':10000,'bs':250,'nc':15,'us':False,'ub':True,'pd':0.5,'lr_S':0.8,'a_S':1.00,'b_S':0.01,'d':0.9,'lr_F':0.8,'a_F':1.00,'b_F':0.01,'nb':15,'nt':501,'bw':None,'kr':0.05},
-            {'u_FR':True,'u_S':True,'u_FS':True,'nm':10000,'bs':250,'nc':15,'us':False,'ub':True,'pd':0.5,'lr_S':0.5,'a_S':1.00,'b_S':0.01,'d':0.9,'lr_F':0.5,'a_F':1.00,'b_F':0.01,'nb':15,'nt':501,'bw':None,'kr':0.05},
-            {'u_FR':True,'u_S':True,'u_FS':True,'nm':10000,'bs':250,'nc':15,'us':False,'ub':True,'pd':0.5,'lr_S':0.5,'a_S':1.00,'b_S':1.00,'d':0.9,'lr_F':0.5,'a_F':1.00,'b_F':1.00,'nb':15,'nt':501,'bw':None,'kr':0.05},
-            {'u_FR':True,'u_S':True,'u_FS':True,'nm':10000,'bs':250,'nc':15,'us':False,'ub':True,'pd':0.5,'lr_S':0.5,'a_S':1.00,'b_S':0.10,'d':0.9,'lr_F':0.5,'a_F':1.00,'b_F':0.10,'nb':15,'nt':501,'bw':None,'kr':0.05},
-            {'u_FR':True,'u_S':True,'u_FS':True,'nm':10000,'bs':250,'nc':15,'us':False,'ub':True,'pd':0.5,'lr_S':0.5,'a_S':10.0,'b_S':0.01,'d':0.9,'lr_F':0.5,'a_F':10.0,'b_F':0.01,'nb':15,'nt':501,'bw':None,'kr':0.05},
-            {'u_FR':True,'u_S':True,'u_FS':True,'nm':10000,'bs':250,'nc':15,'us':False,'ub':True,'pd':0.5,'lr_S':0.5,'a_S':1.00,'b_S':10.0,'d':0.9,'lr_F':0.5,'a_F':1.00,'b_F':10.0,'nb':15,'nt':501,'bw':None,'kr':0.05},
-            {'u_FR':True,'u_S':True,'u_FS':True,'nm':10000,'bs':250,'nc':15,'us':False,'ub':True,'pd':0.5,'lr_S':0.5,'a_S':1.00,'b_S':0.50,'d':0.9,'lr_F':0.5,'a_F':1.00,'b_F':0.50,'nb':15,'nt':501,'bw':None,'kr':0.05},
-            {'u_FR':True,'u_S':True,'u_FS':True,'nm':10000,'bs':250,'nc':30,'us':False,'ub':True,'pd':0.5,'lr_S':0.5,'a_S':1.00,'b_S':0.01,'d':0.9,'lr_F':0.5,'a_F':1.00,'b_F':0.01,'nb':30,'nt':501,'bw':None,'kr':0.05},
-            {'u_FR':True,'u_S':True,'u_FS':True,'nm':10000,'bs':250,'nc': 5,'us':False,'ub':True,'pd':0.5,'lr_S':0.5,'a_S':1.00,'b_S':0.01,'d':0.9,'lr_F':0.5,'a_F':1.00,'b_F':0.01,'nb': 5,'nt':501,'bw':None,'kr':0.05},
-            {'u_FR':True,'u_S':True,'u_FS':True,'nm':10000,'bs':250,'nc': 2,'us':False,'ub':True,'pd':0.5,'lr_S':0.5,'a_S':1.00,'b_S':0.01,'d':0.9,'lr_F':0.5,'a_F':1.00,'b_F':0.01,'nb': 2,'nt':501,'bw':None,'kr':0.05}
+            {'u_FR':True,'u_S':True,'u_FS':True,'nm':10000,'bs':250,'nc':15,'us':False,'ub':True,'pd':0.5,'lr_S': 0.2,'a_S':1.00,'b_S':1.00,'d':0.9,'lr_F': 0.8,'a_F':1.00,'b_F':0.50,'nb':15,'nt':501,'kr':0.05},
+            {'u_FR':True,'u_S':True,'u_FS':True,'nm':10000,'bs':500,'nc':15,'us':False,'ub':True,'pd':0.5,'lr_S': 0.2,'a_S':1.00,'b_S':1.00,'d':0.9,'lr_F': 0.8,'a_F':1.00,'b_F':0.50,'nb':15,'nt':501,'kr':0.05},
+            {'u_FR':True,'u_S':True,'u_FS':True,'nm':10000,'bs':128,'nc':15,'us':False,'ub':True,'pd':0.5,'lr_S': 0.2,'a_S':1.00,'b_S':1.00,'d':0.9,'lr_F': 0.8,'a_F':1.00,'b_F':0.50,'nb':15,'nt':501,'kr':0.05},
+            {'u_FR':True,'u_S':True,'u_FS':True,'nm':10000,'bs': 64,'nc':15,'us':False,'ub':True,'pd':0.5,'lr_S': 0.2,'a_S':1.00,'b_S':1.00,'d':0.9,'lr_F': 0.8,'a_F':1.00,'b_F':0.50,'nb':15,'nt':501,'kr':0.05},
+            {'u_FR':True,'u_S':True,'u_FS':True,'nm':10000,'bs':250,'nc':10,'us':False,'ub':True,'pd':0.5,'lr_S': 0.2,'a_S':1.00,'b_S':1.00,'d':0.9,'lr_F': 0.8,'a_F':1.00,'b_F':0.50,'nb':10,'nt':501,'kr':0.05},
+            {'u_FR':True,'u_S':True,'u_FS':True,'nm':10000,'bs':250,'nc':20,'us':False,'ub':True,'pd':0.5,'lr_S': 0.2,'a_S':1.00,'b_S':1.00,'d':0.9,'lr_F': 0.8,'a_F':1.00,'b_F':0.50,'nb':20,'nt':501,'kr':0.05},
+            {'u_FR':True,'u_S':True,'u_FS':True,'nm':10000,'bs':250,'nc':25,'us':False,'ub':True,'pd':0.5,'lr_S': 0.2,'a_S':1.00,'b_S':1.00,'d':0.9,'lr_F': 0.8,'a_F':1.00,'b_F':0.50,'nb':25,'nt':501,'kr':0.05},
+            {'u_FR':True,'u_S':True,'u_FS':True,'nm':10000,'bs':250,'nc':15,'us':False,'ub':True,'pd':0.5,'lr_S': 0.5,'a_S':1.00,'b_S':1.00,'d':0.9,'lr_F':10.0,'a_F':1.00,'b_F':0.50,'nb':15,'nt':501,'kr':0.05},
+            {'u_FR':True,'u_S':True,'u_FS':True,'nm':10000,'bs':250,'nc':15,'us':False,'ub':True,'pd':0.5,'lr_S': 0.1,'a_S':1.00,'b_S':1.00,'d':0.9,'lr_F':0.01,'a_F':1.00,'b_F':0.50,'nb':15,'nt':501,'kr':0.05},
+            {'u_FR':True,'u_S':True,'u_FS':True,'nm':10000,'bs':250,'nc':15,'us':False,'ub':True,'pd':0.5,'lr_S':0.01,'a_S':1.00,'b_S':1.00,'d':0.9,'lr_F': 4.0,'a_F':1.00,'b_F':0.50,'nb':15,'nt':501,'kr':0.05},
+            {'u_FR':True,'u_S':True,'u_FS':True,'nm':10000,'bs':250,'nc':15,'us':False,'ub':True,'pd':0.5,'lr_S': 1.0,'a_S':1.00,'b_S':1.00,'d':0.9,'lr_F': 1.0,'a_F':1.00,'b_F':0.50,'nb':15,'nt':501,'kr':0.05},
+            {'u_FR':True,'u_S':True,'u_FS':True,'nm':10000,'bs':250,'nc':15,'us':False,'ub':True,'pd':0.5,'lr_S': 0.2,'a_S':1.00,'b_S':1.00,'d':0.9,'lr_F': 1.0,'a_F':1.00,'b_F':10.0,'nb':15,'nt':501,'kr':0.05},
+            {'u_FR':True,'u_S':True,'u_FS':True,'nm':10000,'bs':250,'nc':15,'us':False,'ub':True,'pd':0.5,'lr_S': 0.2,'a_S':1.00,'b_S':1.00,'d':0.9,'lr_F': 4.0,'a_F':1.00,'b_F':10.0,'nb':15,'nt':501,'kr':0.05},
+            {'u_FR':True,'u_S':True,'u_FS':True,'nm':10000,'bs':250,'nc':15,'us':False,'ub':True,'pd':0.5,'lr_S': 0.2,'a_S':1.00,'b_S':1.00,'d':0.9,'lr_F': 2.0,'a_F':1.00,'b_F': 5.0,'nb':15,'nt':501,'kr':0.05},
+            {'u_FR':True,'u_S':True,'u_FS':True,'nm':10000,'bs':250,'nc':50,'us':False,'ub':True,'pd':0.5,'lr_S': 0.2,'a_S':1.00,'b_S':1.00,'d':0.9,'lr_F': 2.0,'a_F':1.00,'b_F': 5.0,'nb':50,'nt':501,'kr':0.05},
         ]
         
         if args.dataset == 'AudioMNIST':
-            job_vals = audiomnist_jobarray_vals[args.job_idx]
+            if args.labeltype == 'digit':
+                if args.job_idx >= len(audiomnist_d_jobarray_vals):
+                    raise ValueError(f"Job index {args.job_idx} is out of range for AudioMNIST digit job array values.")
+                job_vals = audiomnist_d_jobarray_vals[args.job_idx]
+            elif args.labeltype == 'gender':
+                if args.job_idx >= len(audiomnist_g_jobarray_vals):
+                    raise ValueError(f"Job index {args.job_idx} is out of range for AudioMNIST gender job array values.")
+                job_vals = audiomnist_g_jobarray_vals[args.job_idx]
         elif args.dataset == 'synthetic':
+            if args.job_idx >= len(synthetic_jobarray_vals):
+                    raise ValueError(f"Job index {args.job_idx} is out of range for synthetic job array values.")
             job_vals = synthetic_jobarray_vals[args.job_idx]
         args.use_FreqRISE =         job_vals['u_FR']
         args.use_SURL =             job_vals['u_S']
@@ -343,15 +376,8 @@ if __name__ == '__main__':
         args.beta_F =               job_vals['b_F']
         args.num_banks =            job_vals['nb']
         args.num_taps =             job_vals['nt']
-        args.fs =                   8000 if args.dataset == "AudioMNIST" else args.synth_sig_len
-        args.bandwidth =            job_vals['bw']
         args.keep_ratio =           job_vals['kr']
         
-    if args.dataset == 'synthetic' and args.use_FiSURL:
-        assert args.synth_sig_len == args.fs, "Synthetic signal length should be equal to fs if using FiSURL, as that would always be the case for 1 second signals"
-    
-    if args.dataset == 'AudioMNIST' and args.use_FiSURL:
-        assert 8000 == args.fs, "AudioMNIST signal length should be equal to fs if using FiSURL, as that would always be the case for 1 second signals"
     
     if args.dataset == 'synthetic' and (args.use_FreqRISE or args.use_SURL or args.use_FiSURL):
         assert args.synth_sig_len > args.num_cells, "Number of cells should be lower than synth_sig_len if using synthetic dataset"

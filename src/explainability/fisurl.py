@@ -3,19 +3,20 @@ import torch
 import torch.nn as nn
 # from src.explainability.masking_filterbank import filter_mask_generator
 from src.explainability.masking_filterbank import FilterbankMaskPolicy
-from src.utils import FilterBank
+from src.utils import FilterBank, apply_fir_filterbank_mask, create_fir_filterbank
 import numpy as np
 import os
 import pickle
 import time
+
+from src.plotting.quickplot import quickplot
+import shutil
 
 class FiSURL(nn.Module): # FiSURL: Filterbank Sampling Using Reinforcement Learning (WIP Title)
     def __init__(self, 
                 encoder: nn.Module, # Black-box model to explain
                 num_taps: int = 501,
                 num_banks: int = 10,
-                fs: int = 8000,
-                bandwidth = None,
                 batch_size: int = 10, 
                 num_batches: int = 300,
                 keep_ratio: float = 0.05, # Between 0.05 and 0.15 in FLEXtime
@@ -33,9 +34,6 @@ class FiSURL(nn.Module): # FiSURL: Filterbank Sampling Using Reinforcement Learn
         # Initialize filter bank parameters
         self.num_taps = num_taps
         self.num_banks = num_banks
-        self.fs = fs
-        self.bandwidth = bandwidth if bandwidth else (fs / 2) /  num_banks
-        self.filter_bank = FilterBank(self.num_banks, self.fs, self.num_taps, self.bandwidth)
 
         # Initialize mask generator parameters
         self.batch_size = batch_size
@@ -58,13 +56,15 @@ class FiSURL(nn.Module): # FiSURL: Filterbank Sampling Using Reinforcement Learn
 
     def forward(self, input_data, target_class, idx): # mask_generator, **kwargs):
         p = []
-        shape = input_data.shape
         input_fft = rfft(input_data)
+        bandwidth = (input_data.shape[-1] / 2) /  self.num_banks
+        quickplot(input_fft[0,0].abs(), 'input_fft')
 
         # if self.use_rl:
-        m_policy = FilterbankMaskPolicy(self.batch_size, shape, self.num_banks, self.device)
+        m_policy = FilterbankMaskPolicy(self.batch_size, input_data.shape, self.num_banks, self.device)
         optimizer = torch.optim.Adam(m_policy.parameters(), lr=self.lr)
         baseline = 0.0
+        filterbank = create_fir_filterbank(self.num_banks, input_data.shape[-1], self.num_taps)
 
         with torch.no_grad(): 
             # Get predictions of the model with the original input
@@ -79,20 +79,19 @@ class FiSURL(nn.Module): # FiSURL: Filterbank Sampling Using Reinforcement Learn
             reward_list = []
             start_time = time.time()
 
-        for _ in range(self.num_batches):
+        for j in range(self.num_batches):
             masks, log_probs = m_policy()
             masks = masks.to(self.device)
-            x_masked = self.filter_bank.forward(input_data, mask=masks) # Apply the mask to the input data - masked data is of shape (batch_size, 1, 1, fs)
-
+            x_masked = apply_fir_filterbank_mask(input_data[0,0], filterbank, masks.view(self.batch_size, self.num_banks), self.num_taps).reshape(self.batch_size,1,1,-1)
             with torch.no_grad():
                 predictions = self.encoder(x_masked.float().to(self.device), only_feats = False).detach()
                 if self.use_softmax:
                     predictions = torch.softmax(predictions, dim=-1)
                  
-            masks_up = torch.zeros((self.batch_size, 1, 1, int(self.fs / 2) + 1)).to(self.device)
+            masks_up = torch.zeros((self.batch_size, 1, 1, int(input_data.shape[-1] / 2) + 1)).to(self.device)
             index = 0
             for i in range(1, self.num_banks+1):
-                next_index = int(np.ceil(i * self.bandwidth))
+                next_index = int(np.ceil(i * bandwidth))
                 masks_up[:, :, :, index:next_index] = masks[:, :, :, i-1].unsqueeze(-1)
                 index = next_index
             sals = torch.matmul(predictions.transpose(0,1).float(), masks_up.view(self.batch_size, -1).abs().float()).transpose(0,1).unsqueeze(0) # Compute saliency
@@ -112,7 +111,7 @@ class FiSURL(nn.Module): # FiSURL: Filterbank Sampling Using Reinforcement Learn
             mean_reward = rewards.mean()
             baseline = self.decay * baseline + (1 - self.decay) * mean_reward # Update the baseline
             loss = -((rewards - baseline) * log_probs).mean() # Reinforce loss, negative because we want to maximize the expected reward
-
+            quickplot(torch.sigmoid(m_policy.logits).detach().cpu(), f'Probs idx_{idx} i_{j}. Reward: {mean_reward.cpu().item()}')
             optimizer.zero_grad() # Zero the gradients  
             loss.backward() # Backpropagation
             optimizer.step() # Update the policy network
@@ -142,7 +141,11 @@ class FiSURL(nn.Module): # FiSURL: Filterbank Sampling Using Reinforcement Learn
             sample_path = os.path.join(self.save_signals_path, f'sample_{idx}.pkl')
             with open(sample_path, mode='wb') as f:
                 pickle.dump(output_dict, f)
-        
+        quickplot(importance.squeeze().cpu(), f'FiSURL Importance idx_{idx}')
+        print('Target Class:', target_class)
+        print('Prediction:', torch.argmax(pred_original).cpu())
+        breakpoint()
+        shutil.rmtree('temp')
         return importance
 
     def forward_dataloader(self, dataloader):

@@ -7,8 +7,8 @@ vars = {
     'model_path': 'models',
     'output_path': 'outputs',
     'dataset' : 'synthetic',
-    'debug_mode' : True,
-    'save_signals' : True,
+    'debug_mode' : False,
+    'save_signals' : False,
 # What to compute
     'incrementing_masks' : False,
     'make_deletion_curve_plots' : True,
@@ -19,44 +19,40 @@ vars = {
     'use_FiSURL' : True,
     'use_baselines' : True,
 # AudioMNIST
-    'labeltype' : 'digit',
+    'labeltype' : 'gender',
 # Synthetic
     'noise_level' : '0',
     'synth_sig_len' : '100',
     'no_random_peaks' : False,
     'seed' : '42',
 # Hyperparams
-    'n_samples' : '10',
-    'n_masks' : '3000',
-    'batch_size' : '100',
-    'num_cells' : '10',
+    'n_samples' : '500',
+    'n_masks' : '10000',
+    'batch_size' : '10',
+    'num_cells' : '15',
     'use_softmax' : False,
 # FreqRISE
     'probability_of_drop' : '0.5',
 # Reinforce
     'lr_S' : '0.1',
     'alpha_S' : '1.0',
-    'beta_S' : '0.01',
+    'beta_S' : '30.0',
     'decay' : '0.9',
 # FiSURL
-    'lr_F' : '1.0',
+    'lr_F' : '0.1',
     'alpha_F' : '1.0',
-    'beta_F' : '0.1',
-    'num_banks' : '10',
-    'num_taps' : '501',
+    'beta_F' : '30.0',
+    'num_banks' : '15',
+    'num_taps' : '1001',
     'keep_ratio' : '0.05'
 }
 
 if vars['incrementing_masks'] and vars['use_baselines']:
-    response = input("Incrementing masks and baselines shouldn't be used together. Are you sure you want to continue? (y/n): ")
+    response = input("Incrementing masks and use_baselines shouldn't be used together. Are you sure you want to continue? (y/n): ")
     if response.lower() not in ['y', 'ye', 'yes']:
         print("Exiting...")
         exit(0)
         
-if vars['dataset'] == 'AudioMNIST':
-    vars['fs'] = '8000'
-else:
-    vars['fs'] = vars['synth_sig_len']
     
 assert vars['dataset'] in ['AudioMNIST', 'synthetic'], "Dataset must be either 'AudioMNIST' or 'synthetic'"
 if vars['dataset'] == 'AudioMNIST':
@@ -67,9 +63,9 @@ if vars['dataset'] == 'synthetic':
 if vars['use_FreqRISE']:
     assert float(vars['probability_of_drop']) >= 0.0 and float(vars['probability_of_drop']) <= 1.0, "Probability of drop must be between 0.0 and 1.0"
 if vars['use_FreqRISE'] or vars['use_SURL']:
-    assert int(vars['num_cells']) > 0 and int(vars['num_cells']) <= int(vars['fs']), "Number of cells must be greater than 0 and less than or equal to fs"
+    assert int(vars['num_cells']) > 0, "Number of cells must be greater than 0 and less than or equal to fs"
 if vars['use_FiSURL']:
-    assert int(vars['num_banks']) > 0 and int(vars['num_banks']) <= int(vars['fs']), "Number of banks must be greater than 0 and less than or equal to fs"
+    assert int(vars['num_banks']) > 0, "Number of banks must be greater than 0 and less than or equal to fs"
     assert int(vars['num_taps']) > 0, "Number of taps must be greater than 0"
     assert float(vars['keep_ratio']) >= 0.0 and float(vars['keep_ratio']) <= 1.0, "Keep ratio must be between 0.0 and 1.0"
     
@@ -155,12 +151,16 @@ scripts = [
     ["python", "src/plotting/loss_reward_plotting.py",
         "--output_path", vars['output_path'],
         "--sample_id", random_ID,
-        ("--debug_mode" if vars['debug_mode'] else "")
+        ("--debug_mode" if vars['debug_mode'] else ""),
+        "--dataset", vars['dataset'],
+        "--labeltype", vars['labeltype']
     ],
     ["python", "src/plotting/saliency_fft_plotting.py",
         "--output_path", vars['output_path'],
         "--sample_id", random_ID,
-        ("--debug_mode" if vars['debug_mode'] else "")
+        ("--debug_mode" if vars['debug_mode'] else ""),
+        "--dataset", vars['dataset'],
+        "--labeltype", vars['labeltype']
     ],
     ["python", "src/plotting/increment_masks_plotting.py",
         "--output_path", vars['output_path'],

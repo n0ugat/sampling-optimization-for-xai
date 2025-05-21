@@ -76,7 +76,7 @@ def main(args):
             # compute random deletion scores
             evaluation['deletion curves']['random'] = deletion_curves(model, test_loader, 'random', quantiles, device = device, method_name='random')
             # get amplitude mask
-            evaluation['deletion curves']['amplitude'] = deletion_curves(model, test_loader, 'amplitude', quantiles, device = device, method_name='amplitude')
+            # evaluation['deletion curves']['amplitude'] = deletion_curves(model, test_loader, 'amplitude', quantiles, device = device, method_name='amplitude')
         print('Deletion scores computed')
     
     if not 'complexity scores' in evaluation:

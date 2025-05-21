@@ -6,7 +6,7 @@ import argparse
 import string
 import random   
 
-def plot_incrementing_masks(data, output_path):
+def plot_incrementing_masks(data, output_path, dataname):
     method_names_and_colors = {'FreqRISE':'blue', 'SURL':'orange', 'FiSURL':'green'}
     
     n_masks_list = set()
@@ -56,7 +56,7 @@ def plot_incrementing_masks(data, output_path):
     plt.plot(n_masks_list, fisurl_complexities, label='FiSURL', color=method_names_and_colors['FiSURL'])
     plt.xlabel('Number of masks')
     plt.ylabel('Complexity')
-    plt.title('Complexity vs Number of masks')
+    plt.title(f'Complexity vs Number of masks for {dataname} prediction task')
     plt.legend()
     plt.grid()
     plt.tight_layout()
@@ -70,7 +70,7 @@ def plot_incrementing_masks(data, output_path):
     plt.plot(n_masks_list, fisurl_faithfulness, label='FiSURL', color=method_names_and_colors['FiSURL'])
     plt.xlabel('Number of masks')
     plt.ylabel('Faithfulness')
-    plt.title('Faithfulness vs Number of masks')
+    plt.title(f'Faithfulness vs Number of masks for {dataname} prediction task')
     plt.legend()
     plt.grid()
     plt.tight_layout()
@@ -85,7 +85,7 @@ def plot_incrementing_masks(data, output_path):
         plt.plot(n_masks_list, fisurl_localizations, label='FiSURL', color=method_names_and_colors['FiSURL'])
         plt.xlabel('Number of masks')
         plt.ylabel('Localization')
-        plt.title('Localization vs Number of masks')
+        plt.title(f'Localization vs Number of masks for {dataname} prediction task')
         plt.legend()
         plt.grid()
         plt.tight_layout()
@@ -139,4 +139,9 @@ if __name__ == "__main__":
     with open(input_path, 'rb') as f:
         data = pickle.load(f)
         
-    plot_incrementing_masks(data, output_path)
+    if args.dataset == 'AudioMNIST':
+        dataname = f'AudioMNIST: {args.labeltype}'
+    else:
+        dataname = 'Synthetic'    
+    
+    plot_incrementing_masks(data, output_path, dataname)

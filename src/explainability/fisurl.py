@@ -60,7 +60,6 @@ class FiSURL(nn.Module): # FiSURL: Filterbank Sampling Using Reinforcement Learn
         m_policy = FilterbankMaskPolicy(self.batch_size, input_data.shape, self.num_banks, self.device)
         optimizer = torch.optim.Adam(m_policy.parameters(), lr=self.lr)
         baseline = 0.0
-        filterbank = create_fir_filterbank(self.num_banks, input_data.shape[-1], self.num_taps, device=self.device)
 
         with torch.no_grad(): 
             # Get predictions of the model with the original input
@@ -78,7 +77,7 @@ class FiSURL(nn.Module): # FiSURL: Filterbank Sampling Using Reinforcement Learn
         for j in range(self.num_batches):
             masks, log_probs = m_policy()
             masks = masks.to(self.device)
-            x_masked = apply_fir_filterbank_mask(input_data[0,0], filterbank, masks.view(self.batch_size, self.num_banks), self.num_taps).reshape(self.batch_size,1,1,-1)
+            x_masked = apply_fir_filterbank_mask(input_data[0,0], self.filterbank, masks.view(self.batch_size, self.num_banks), self.num_taps).reshape(self.batch_size,1,1,-1)
             with torch.no_grad():
                 predictions = self.encoder(x_masked.float().to(self.device), only_feats = False).detach()
                 if self.use_softmax:
@@ -144,6 +143,7 @@ class FiSURL(nn.Module): # FiSURL: Filterbank Sampling Using Reinforcement Learn
         i = 0
 
         for data, target in dataloader:
+            self.filterbank = create_fir_filterbank(self.num_banks, data.shape[-1], self.num_taps, device=self.device)
             batch_scores = []
             print("Computing batch", i+1, "/", len(dataloader))
             # for sample, y in tqdm(zip(data, target), desc="Computing samples", total=data.shape[0]):

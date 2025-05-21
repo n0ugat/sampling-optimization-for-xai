@@ -5,7 +5,7 @@ import pickle
 import argparse
 
 def plot_deletion_curve(method_name_with_params, mean_prob, quantiles, AUC, output_path, dataname):
-    method_names = ['FreqRISE', 'SURL', 'FiSURL', 'random', 'amplitude', 'saliency', 'IG', 'LRP']
+    method_names = ['FreqRISE', 'SURL', 'FiSURL', 'random', 'saliency', 'IG', 'LRP']
     method_name = ""
     for mn in method_names:
         if method_name_with_params.lower().startswith(mn.lower()):
@@ -15,7 +15,7 @@ def plot_deletion_curve(method_name_with_params, mean_prob, quantiles, AUC, outp
     plt.plot(quantiles, mean_prob, label=f'{method_name} (AUC = {AUC:.2f})')
     plt.xlabel('Quantile')
     plt.ylabel('Mean True Class Probability')
-    plt.title(f'Deletion Curve for {method_name} on {dataname}')
+    plt.title(f'Deletion Curve for {method_name} on {dataname} prediction task')
     plt.legend()
     plt.grid()
     plt.tight_layout()
@@ -26,13 +26,12 @@ def plot_deletion_curve(method_name_with_params, mean_prob, quantiles, AUC, outp
     
 
 def plot_joined_deletion_curves(deletion_curves, output_path, dataname):
-    method_names_and_colors = {'FreqRISE':'blue', 'SURL':'orange', 'FiSURL':'green', 'random':'red', 'amplitude':'purple', 'saliency':'brown', 'IG':'pink', 'LRP':'gray'}
+    method_names_and_colors = {'FreqRISE':'blue', 'SURL':'orange', 'FiSURL':'green', 'random':'red', 'saliency':'brown', 'IG':'pink', 'LRP':'gray'}
     
     plt.figure(figsize=(6, 4))
     for method_name_with_params, deletion_curve in deletion_curves.items():
         mean_prob = deletion_curve['mean_prob']
         quantiles = deletion_curve['quantiles']
-        AUC = deletion_curve['AUC']
         method_name = ""
         for mn in method_names_and_colors.keys():
             if method_name_with_params.lower().startswith(mn.lower()):
@@ -42,7 +41,7 @@ def plot_joined_deletion_curves(deletion_curves, output_path, dataname):
         plt.plot(quantiles, mean_prob, label=method_name, color=method_names_and_colors[method_name])
     plt.xlabel('Quantile')
     plt.ylabel('Mean True Class Probability')
-    plt.title(f'Deletion Curves for {dataname}')
+    plt.title(f'Deletion Curves for {dataname} prediction task')
     plt.legend(loc='upper center', bbox_to_anchor=(0.5, -0.2), ncol=4)
     plt.grid()
     plt.tight_layout()
@@ -89,9 +88,10 @@ if __name__ == "__main__":
         data = pickle.load(f)
         deletion_curves = data['deletion curves']
     
-    dataname = args.dataset
     if args.dataset == 'AudioMNIST':
-        dataname = f'AudioMNIST_{args.labeltype}'
+        dataname = f'AudioMNIST: {args.labeltype}'
+    else:
+        dataname = 'Synthetic'
     for method_name in deletion_curves.keys():
         plot_deletion_curve(method_name, deletion_curves[method_name]['mean_prob'], deletion_curves[method_name]['quantiles'], deletion_curves[method_name]['AUC'], output_path, dataname)
         

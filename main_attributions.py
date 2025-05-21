@@ -284,65 +284,29 @@ if __name__ == '__main__':
         args.random_ID = ''.join(random.choices(chars, k=8))
         # AudioMNIST digit test_vals
         audiomnist_d_jobarray_vals = [
-            {'u_FR':True,'u_S':True,'u_FS':True,'nm':10000,'bs':250,'nc': 50,'us':False,'ub':True,'pd':0.5,'lr_S': 0.2,'a_S':1.00,'b_S':1.00,'d':0.9,'lr_F': 0.5,'a_F':1.00,'b_F':1.00,'nb': 50,'nt':501,'kr':0.05},
-            {'u_FR':True,'u_S':True,'u_FS':True,'nm':10000,'bs':500,'nc': 50,'us':False,'ub':True,'pd':0.5,'lr_S': 0.2,'a_S':1.00,'b_S':1.00,'d':0.9,'lr_F': 0.5,'a_F':1.00,'b_F':1.00,'nb': 50,'nt':501,'kr':0.05},
-            {'u_FR':True,'u_S':True,'u_FS':True,'nm':10000,'bs':128,'nc': 50,'us':False,'ub':True,'pd':0.5,'lr_S': 0.2,'a_S':1.00,'b_S':1.00,'d':0.9,'lr_F': 0.5,'a_F':1.00,'b_F':1.00,'nb': 50,'nt':501,'kr':0.05},
-            {'u_FR':True,'u_S':True,'u_FS':True,'nm':10000,'bs': 64,'nc': 50,'us':False,'ub':True,'pd':0.5,'lr_S': 0.2,'a_S':1.00,'b_S':1.00,'d':0.9,'lr_F': 0.5,'a_F':1.00,'b_F':1.00,'nb': 50,'nt':501,'kr':0.05},
-            {'u_FR':True,'u_S':True,'u_FS':True,'nm':10000,'bs':250,'nc': 20,'us':False,'ub':True,'pd':0.5,'lr_S': 0.2,'a_S':1.00,'b_S':1.00,'d':0.9,'lr_F': 0.5,'a_F':1.00,'b_F':1.00,'nb': 20,'nt':501,'kr':0.05},
-            {'u_FR':True,'u_S':True,'u_FS':True,'nm':10000,'bs':250,'nc': 35,'us':False,'ub':True,'pd':0.5,'lr_S': 0.2,'a_S':1.00,'b_S':1.00,'d':0.9,'lr_F': 0.5,'a_F':1.00,'b_F':1.00,'nb': 35,'nt':501,'kr':0.05},
-            {'u_FR':True,'u_S':True,'u_FS':True,'nm':10000,'bs':250,'nc': 80,'us':False,'ub':True,'pd':0.5,'lr_S': 0.2,'a_S':1.00,'b_S':1.00,'d':0.9,'lr_F': 0.5,'a_F':1.00,'b_F':1.00,'nb': 80,'nt':501,'kr':0.05},
-            {'u_FR':True,'u_S':True,'u_FS':True,'nm':10000,'bs':250,'nc': 50,'us':False,'ub':True,'pd':0.5,'lr_S':0.01,'a_S':1.00,'b_S':1.00,'d':0.9,'lr_F':0.01,'a_F':1.00,'b_F':1.00,'nb': 50,'nt':501,'kr':0.05},
-            {'u_FR':True,'u_S':True,'u_FS':True,'nm':10000,'bs':250,'nc': 50,'us':False,'ub':True,'pd':0.5,'lr_S':10.0,'a_S':1.00,'b_S':1.00,'d':0.9,'lr_F':10.0,'a_F':1.00,'b_F':1.00,'nb': 50,'nt':501,'kr':0.05},
-            {'u_FR':True,'u_S':True,'u_FS':True,'nm':10000,'bs':250,'nc': 50,'us':False,'ub':True,'pd':0.5,'lr_S': 0.2,'a_S':5.00,'b_S':1.00,'d':0.9,'lr_F': 0.5,'a_F':5.00,'b_F':1.00,'nb': 50,'nt':501,'kr':0.05},
-            {'u_FR':True,'u_S':True,'u_FS':True,'nm':10000,'bs':250,'nc': 50,'us':False,'ub':True,'pd':0.5,'lr_S': 0.2,'a_S':1.00,'b_S':5.00,'d':0.9,'lr_F': 0.5,'a_F':1.00,'b_F':5.00,'nb': 50,'nt':501,'kr':0.05},
-            {'u_FR':True,'u_S':True,'u_FS':True,'nm':10000,'bs':250,'nc': 50,'us':False,'ub':True,'pd':0.5,'lr_S': 0.2,'a_S':1.00,'b_S':2.00,'d':0.9,'lr_F': 0.5,'a_F':1.00,'b_F':2.00,'nb': 50,'nt':501,'kr':0.05},
-            {'u_FR':True,'u_S':True,'u_FS':True,'nm':10000,'bs':250,'nc': 50,'us':False,'ub':True,'pd':0.5,'lr_S':1.00,'a_S':1.00,'b_S':5.00,'d':0.9,'lr_F':1.00,'a_F':1.00,'b_F':5.00,'nb': 50,'nt':501,'kr':0.05},
-            {'u_FR':True,'u_S':True,'u_FS':True,'nm':10000,'bs':250,'nc': 50,'us':False,'ub':True,'pd':0.5,'lr_S':5.00,'a_S':1.00,'b_S':5.00,'d':0.9,'lr_F':5.00,'a_F':1.00,'b_F':5.00,'nb': 50,'nt':501,'kr':0.05},
-            {'u_FR':True,'u_S':True,'u_FS':True,'nm':10000,'bs':250,'nc': 50,'us':False,'ub':True,'pd':0.5,'lr_S':3.00,'a_S':1.00,'b_S':5.00,'d':0.9,'lr_F':3.00,'a_F':1.00,'b_F':5.00,'nb': 50,'nt':501,'kr':0.05},
-            {'u_FR':True,'u_S':True,'u_FS':True,'nm':10000,'bs':250,'nc': 50,'us':False,'ub':True,'pd':0.5,'lr_S': 0.2,'a_S':0.30,'b_S':1.00,'d':0.9,'lr_F': 0.5,'a_F':0.30,'b_F':1.00,'nb': 50,'nt':501,'kr':0.05},
-            {'u_FR':True,'u_S':True,'u_FS':True,'nm':10000,'bs':250,'nc': 50,'us':False,'ub':True,'pd':0.5,'lr_S':1.00,'a_S':0.30,'b_S':1.00,'d':0.9,'lr_F':1.00,'a_F':0.30,'b_F':1.00,'nb': 50,'nt':501,'kr':0.05},
-            {'u_FR':True,'u_S':True,'u_FS':True,'nm':10000,'bs': 64,'nc': 50,'us':False,'ub':True,'pd':0.5,'lr_S':2.00,'a_S':0.30,'b_S':5.00,'d':0.9,'lr_F':2.00,'a_F':0.30,'b_F':5.00,'nb': 50,'nt':501,'kr':0.05}
+            {'u_FR':True,'u_S':True,'u_FS':True,'nm': 100,'bs':10,'nc': 128,'us':False,'ub':False,'pd':0.5,'lr_S': 0.05,'a_S':1.00,'b_S':100.00,'d':0.9,'lr_F': 0.05,'a_F':1.00,'b_F':100.00,'nb': 128,'nt':1001,'kr':0.05},
+            {'u_FR':True,'u_S':True,'u_FS':True,'nm': 250,'bs':10,'nc': 128,'us':False,'ub':False,'pd':0.5,'lr_S': 0.05,'a_S':1.00,'b_S':100.00,'d':0.9,'lr_F': 0.05,'a_F':1.00,'b_F':100.00,'nb': 128,'nt':1001,'kr':0.05},
+            {'u_FR':True,'u_S':True,'u_FS':True,'nm': 350,'bs':10,'nc': 128,'us':False,'ub':False,'pd':0.5,'lr_S': 0.05,'a_S':1.00,'b_S':100.00,'d':0.9,'lr_F': 0.05,'a_F':1.00,'b_F':100.00,'nb': 128,'nt':1001,'kr':0.05},
+            {'u_FR':True,'u_S':True,'u_FS':True,'nm': 500,'bs':10,'nc': 128,'us':False,'ub':False,'pd':0.5,'lr_S': 0.05,'a_S':1.00,'b_S':100.00,'d':0.9,'lr_F': 0.05,'a_F':1.00,'b_F':100.00,'nb': 128,'nt':1001,'kr':0.05},
+            {'u_FR':True,'u_S':True,'u_FS':True,'nm':1000,'bs':10,'nc': 128,'us':False,'ub':False,'pd':0.5,'lr_S': 0.05,'a_S':1.00,'b_S':100.00,'d':0.9,'lr_F': 0.05,'a_F':1.00,'b_F':100.00,'nb': 128,'nt':1001,'kr':0.05}
         ]
         
         # AudioMNIST gender test_vals
         audiomnist_g_jobarray_vals = [
-            {'u_FR':True,'u_S':True,'u_FS':True,'nm':10000,'bs':250,'nc': 50,'us':False,'ub':True,'pd':0.5,'lr_S': 0.1,'a_S':1.00,'b_S':0.01,'d':0.9,'lr_F': 0.1,'a_F':1.00,'b_F':0.01,'nb': 50,'nt':501,'kr':0.05},
-            {'u_FR':True,'u_S':True,'u_FS':True,'nm':10000,'bs':500,'nc': 50,'us':False,'ub':True,'pd':0.5,'lr_S': 0.1,'a_S':1.00,'b_S':0.01,'d':0.9,'lr_F': 0.1,'a_F':1.00,'b_F':0.01,'nb': 50,'nt':501,'kr':0.05},
-            {'u_FR':True,'u_S':True,'u_FS':True,'nm':10000,'bs':128,'nc': 50,'us':False,'ub':True,'pd':0.5,'lr_S': 0.1,'a_S':1.00,'b_S':0.01,'d':0.9,'lr_F': 0.1,'a_F':1.00,'b_F':0.01,'nb': 50,'nt':501,'kr':0.05},
-            {'u_FR':True,'u_S':True,'u_FS':True,'nm':10000,'bs': 64,'nc': 50,'us':False,'ub':True,'pd':0.5,'lr_S': 0.1,'a_S':1.00,'b_S':0.01,'d':0.9,'lr_F': 0.1,'a_F':1.00,'b_F':0.01,'nb': 50,'nt':501,'kr':0.05},
-            {'u_FR':True,'u_S':True,'u_FS':True,'nm':10000,'bs':250,'nc': 25,'us':False,'ub':True,'pd':0.5,'lr_S': 0.1,'a_S':1.00,'b_S':0.01,'d':0.9,'lr_F': 0.1,'a_F':1.00,'b_F':0.01,'nb': 25,'nt':501,'kr':0.05},
-            {'u_FR':True,'u_S':True,'u_FS':True,'nm':10000,'bs':250,'nc': 10,'us':False,'ub':True,'pd':0.5,'lr_S': 0.1,'a_S':1.00,'b_S':0.01,'d':0.9,'lr_F': 0.1,'a_F':1.00,'b_F':0.01,'nb': 10,'nt':501,'kr':0.05},
-            {'u_FR':True,'u_S':True,'u_FS':True,'nm':10000,'bs':250,'nc':  5,'us':False,'ub':True,'pd':0.5,'lr_S': 0.1,'a_S':1.00,'b_S':0.01,'d':0.9,'lr_F': 0.1,'a_F':1.00,'b_F':0.01,'nb':  5,'nt':501,'kr':0.05},
-            {'u_FR':True,'u_S':True,'u_FS':True,'nm':10000,'bs':250,'nc': 50,'us':False,'ub':True,'pd':0.5,'lr_S': 1.0,'a_S':1.00,'b_S':0.01,'d':0.9,'lr_F': 1.0,'a_F':1.00,'b_F':0.01,'nb': 50,'nt':501,'kr':0.05},
-            {'u_FR':True,'u_S':True,'u_FS':True,'nm':10000,'bs':250,'nc': 50,'us':False,'ub':True,'pd':0.5,'lr_S': 3.0,'a_S':1.00,'b_S':0.01,'d':0.9,'lr_F': 3.0,'a_F':1.00,'b_F':0.01,'nb': 50,'nt':501,'kr':0.05},
-            {'u_FR':True,'u_S':True,'u_FS':True,'nm':10000,'bs':250,'nc': 50,'us':False,'ub':True,'pd':0.5,'lr_S': 5.0,'a_S':1.00,'b_S':0.01,'d':0.9,'lr_F': 5.0,'a_F':1.00,'b_F':0.01,'nb': 50,'nt':501,'kr':0.05},
-            {'u_FR':True,'u_S':True,'u_FS':True,'nm':10000,'bs':250,'nc': 50,'us':False,'ub':True,'pd':0.5,'lr_S':10.0,'a_S':1.00,'b_S':0.01,'d':0.9,'lr_F':10.0,'a_F':1.00,'b_F':0.01,'nb': 50,'nt':501,'kr':0.05},
-            {'u_FR':True,'u_S':True,'u_FS':True,'nm':10000,'bs':250,'nc': 50,'us':False,'ub':True,'pd':0.5,'lr_S': 1.0,'a_S':1.00,'b_S': 1.0,'d':0.9,'lr_F': 1.0,'a_F':1.00,'b_F': 2.0,'nb': 50,'nt':501,'kr':0.05},
-            {'u_FR':True,'u_S':True,'u_FS':True,'nm':10000,'bs':250,'nc': 50,'us':False,'ub':True,'pd':0.5,'lr_S': 3.0,'a_S':1.00,'b_S': 1.0,'d':0.9,'lr_F': 3.0,'a_F':1.00,'b_F': 1.0,'nb': 50,'nt':501,'kr':0.05},
-            {'u_FR':True,'u_S':True,'u_FS':True,'nm':10000,'bs':250,'nc': 50,'us':False,'ub':True,'pd':0.5,'lr_S': 5.0,'a_S':1.00,'b_S': 1.0,'d':0.9,'lr_F': 5.0,'a_F':1.00,'b_F': 1.0,'nb': 50,'nt':501,'kr':0.05},
-            {'u_FR':True,'u_S':True,'u_FS':True,'nm':10000,'bs':250,'nc': 50,'us':False,'ub':True,'pd':0.5,'lr_S':10.0,'a_S':1.00,'b_S': 1.0,'d':0.9,'lr_F':10.0,'a_F':1.00,'b_F': 1.0,'nb': 50,'nt':501,'kr':0.05},
-            {'u_FR':True,'u_S':True,'u_FS':True,'nm':10000,'bs':250,'nc': 50,'us':False,'ub':True,'pd':0.5,'lr_S': 1.0,'a_S':1.00,'b_S': 5.0,'d':0.9,'lr_F': 1.0,'a_F':1.00,'b_F': 5.0,'nb': 50,'nt':501,'kr':0.05},
-            {'u_FR':True,'u_S':True,'u_FS':True,'nm':10000,'bs':250,'nc': 50,'us':False,'ub':True,'pd':0.5,'lr_S': 5.0,'a_S':1.00,'b_S': 5.0,'d':0.9,'lr_F': 5.0,'a_F':1.00,'b_F': 5.0,'nb': 50,'nt':501,'kr':0.05},
-            {'u_FR':True,'u_S':True,'u_FS':True,'nm':10000,'bs':250,'nc': 50,'us':False,'ub':True,'pd':0.5,'lr_S':10.0,'a_S':1.00,'b_S': 5.0,'d':0.9,'lr_F':10.0,'a_F':1.00,'b_F': 5.0,'nb': 50,'nt':501,'kr':0.05},
+            {'u_FR':True,'u_S':True,'u_FS':True,'nm': 100,'bs':10,'nc': 128,'us':False,'ub':False,'pd':0.5,'lr_S': 0.05,'a_S':1.00,'b_S':100.00,'d':0.9,'lr_F': 0.05,'a_F':1.00,'b_F':100.00,'nb': 128,'nt':1001,'kr':0.05},
+            {'u_FR':True,'u_S':True,'u_FS':True,'nm': 250,'bs':10,'nc': 128,'us':False,'ub':False,'pd':0.5,'lr_S': 0.05,'a_S':1.00,'b_S':100.00,'d':0.9,'lr_F': 0.05,'a_F':1.00,'b_F':100.00,'nb': 128,'nt':1001,'kr':0.05},
+            {'u_FR':True,'u_S':True,'u_FS':True,'nm': 350,'bs':10,'nc': 128,'us':False,'ub':False,'pd':0.5,'lr_S': 0.05,'a_S':1.00,'b_S':100.00,'d':0.9,'lr_F': 0.05,'a_F':1.00,'b_F':100.00,'nb': 128,'nt':1001,'kr':0.05},
+            {'u_FR':True,'u_S':True,'u_FS':True,'nm': 500,'bs':10,'nc': 128,'us':False,'ub':False,'pd':0.5,'lr_S': 0.05,'a_S':1.00,'b_S':100.00,'d':0.9,'lr_F': 0.05,'a_F':1.00,'b_F':100.00,'nb': 128,'nt':1001,'kr':0.05},
+            {'u_FR':True,'u_S':True,'u_FS':True,'nm':1000,'bs':10,'nc': 128,'us':False,'ub':False,'pd':0.5,'lr_S': 0.05,'a_S':1.00,'b_S':100.00,'d':0.9,'lr_F': 0.05,'a_F':1.00,'b_F':100.00,'nb': 128,'nt':1001,'kr':0.05}
         ]
         
         # Synthetic test_vals, For synth sig len = 100
         synthetic_jobarray_vals = [
-            {'u_FR':True,'u_S':True,'u_FS':True,'nm':10000,'bs':250,'nc':15,'us':False,'ub':True,'pd':0.5,'lr_S': 0.2,'a_S':1.00,'b_S':1.00,'d':0.9,'lr_F': 0.8,'a_F':1.00,'b_F':0.50,'nb':15,'nt':501,'kr':0.05},
-            {'u_FR':True,'u_S':True,'u_FS':True,'nm':10000,'bs':500,'nc':15,'us':False,'ub':True,'pd':0.5,'lr_S': 0.2,'a_S':1.00,'b_S':1.00,'d':0.9,'lr_F': 0.8,'a_F':1.00,'b_F':0.50,'nb':15,'nt':501,'kr':0.05},
-            {'u_FR':True,'u_S':True,'u_FS':True,'nm':10000,'bs':128,'nc':15,'us':False,'ub':True,'pd':0.5,'lr_S': 0.2,'a_S':1.00,'b_S':1.00,'d':0.9,'lr_F': 0.8,'a_F':1.00,'b_F':0.50,'nb':15,'nt':501,'kr':0.05},
-            {'u_FR':True,'u_S':True,'u_FS':True,'nm':10000,'bs': 64,'nc':15,'us':False,'ub':True,'pd':0.5,'lr_S': 0.2,'a_S':1.00,'b_S':1.00,'d':0.9,'lr_F': 0.8,'a_F':1.00,'b_F':0.50,'nb':15,'nt':501,'kr':0.05},
-            {'u_FR':True,'u_S':True,'u_FS':True,'nm':10000,'bs':250,'nc':10,'us':False,'ub':True,'pd':0.5,'lr_S': 0.2,'a_S':1.00,'b_S':1.00,'d':0.9,'lr_F': 0.8,'a_F':1.00,'b_F':0.50,'nb':10,'nt':501,'kr':0.05},
-            {'u_FR':True,'u_S':True,'u_FS':True,'nm':10000,'bs':250,'nc':20,'us':False,'ub':True,'pd':0.5,'lr_S': 0.2,'a_S':1.00,'b_S':1.00,'d':0.9,'lr_F': 0.8,'a_F':1.00,'b_F':0.50,'nb':20,'nt':501,'kr':0.05},
-            {'u_FR':True,'u_S':True,'u_FS':True,'nm':10000,'bs':250,'nc':25,'us':False,'ub':True,'pd':0.5,'lr_S': 0.2,'a_S':1.00,'b_S':1.00,'d':0.9,'lr_F': 0.8,'a_F':1.00,'b_F':0.50,'nb':25,'nt':501,'kr':0.05},
-            {'u_FR':True,'u_S':True,'u_FS':True,'nm':10000,'bs':250,'nc':15,'us':False,'ub':True,'pd':0.5,'lr_S': 0.5,'a_S':1.00,'b_S':1.00,'d':0.9,'lr_F':10.0,'a_F':1.00,'b_F':0.50,'nb':15,'nt':501,'kr':0.05},
-            {'u_FR':True,'u_S':True,'u_FS':True,'nm':10000,'bs':250,'nc':15,'us':False,'ub':True,'pd':0.5,'lr_S': 0.1,'a_S':1.00,'b_S':1.00,'d':0.9,'lr_F':0.01,'a_F':1.00,'b_F':0.50,'nb':15,'nt':501,'kr':0.05},
-            {'u_FR':True,'u_S':True,'u_FS':True,'nm':10000,'bs':250,'nc':15,'us':False,'ub':True,'pd':0.5,'lr_S':0.01,'a_S':1.00,'b_S':1.00,'d':0.9,'lr_F': 4.0,'a_F':1.00,'b_F':0.50,'nb':15,'nt':501,'kr':0.05},
-            {'u_FR':True,'u_S':True,'u_FS':True,'nm':10000,'bs':250,'nc':15,'us':False,'ub':True,'pd':0.5,'lr_S': 1.0,'a_S':1.00,'b_S':1.00,'d':0.9,'lr_F': 1.0,'a_F':1.00,'b_F':0.50,'nb':15,'nt':501,'kr':0.05},
-            {'u_FR':True,'u_S':True,'u_FS':True,'nm':10000,'bs':250,'nc':15,'us':False,'ub':True,'pd':0.5,'lr_S': 0.2,'a_S':1.00,'b_S':1.00,'d':0.9,'lr_F': 1.0,'a_F':1.00,'b_F':10.0,'nb':15,'nt':501,'kr':0.05},
-            {'u_FR':True,'u_S':True,'u_FS':True,'nm':10000,'bs':250,'nc':15,'us':False,'ub':True,'pd':0.5,'lr_S': 0.2,'a_S':1.00,'b_S':1.00,'d':0.9,'lr_F': 4.0,'a_F':1.00,'b_F':10.0,'nb':15,'nt':501,'kr':0.05},
-            {'u_FR':True,'u_S':True,'u_FS':True,'nm':10000,'bs':250,'nc':15,'us':False,'ub':True,'pd':0.5,'lr_S': 0.2,'a_S':1.00,'b_S':1.00,'d':0.9,'lr_F': 2.0,'a_F':1.00,'b_F': 5.0,'nb':15,'nt':501,'kr':0.05},
-            {'u_FR':True,'u_S':True,'u_FS':True,'nm':10000,'bs':250,'nc':50,'us':False,'ub':True,'pd':0.5,'lr_S': 0.2,'a_S':1.00,'b_S':1.00,'d':0.9,'lr_F': 2.0,'a_F':1.00,'b_F': 5.0,'nb':50,'nt':501,'kr':0.05},
+            {'u_FR':True,'u_S':True,'u_FS':True,'nm': 100,'bs':10,'nc': 15,'us':False,'ub':False,'pd':0.5,'lr_S': 0.1,'a_S':1.00,'b_S':30.00,'d':0.9,'lr_F': 0.1,'a_F':1.00,'b_F':30.00,'nb': 15,'nt':1001,'kr':0.05},
+            {'u_FR':True,'u_S':True,'u_FS':True,'nm': 250,'bs':10,'nc': 15,'us':False,'ub':False,'pd':0.5,'lr_S': 0.1,'a_S':1.00,'b_S':30.00,'d':0.9,'lr_F': 0.1,'a_F':1.00,'b_F':30.00,'nb': 15,'nt':1001,'kr':0.05},
+            {'u_FR':True,'u_S':True,'u_FS':True,'nm': 350,'bs':10,'nc': 15,'us':False,'ub':False,'pd':0.5,'lr_S': 0.1,'a_S':1.00,'b_S':30.00,'d':0.9,'lr_F': 0.1,'a_F':1.00,'b_F':30.00,'nb': 15,'nt':1001,'kr':0.05},
+            {'u_FR':True,'u_S':True,'u_FS':True,'nm': 500,'bs':10,'nc': 15,'us':False,'ub':False,'pd':0.5,'lr_S': 0.1,'a_S':1.00,'b_S':30.00,'d':0.9,'lr_F': 0.1,'a_F':1.00,'b_F':30.00,'nb': 15,'nt':1001,'kr':0.05},
+            {'u_FR':True,'u_S':True,'u_FS':True,'nm':1000,'bs':10,'nc': 15,'us':False,'ub':False,'pd':0.5,'lr_S': 0.1,'a_S':1.00,'b_S':30.00,'d':0.9,'lr_F': 0.1,'a_F':1.00,'b_F':30.00,'nb': 15,'nt':1001,'kr':0.05}
         ]
         
         if args.dataset == 'AudioMNIST':

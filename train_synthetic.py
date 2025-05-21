@@ -86,23 +86,27 @@ def train_synthetic(n_samples, noise_level, synth_sig_len, epochs=100, model_pat
     output_path = f'outputs/figures/synthetic_training/ns_{n_samples}_nl_{noise_level}_ssl_{synth_sig_len}_epochs_{epochs}_adp_{add_random_peaks}_seed_{seed}'
     os.makedirs(output_path, exist_ok=True)
     
-    # Plotting
-    plt.plot(collect_train_loss, label='Train Loss')
-    plt.plot(collect_val_loss, label='Validation Loss')
-    plt.xlabel('Epochs')
-    plt.ylabel('Loss')
-    plt.title('Loss vs Epochs')
-    plt.legend()
-    plt.savefig(os.path.join(output_path, 'loss_plot.png'))
-    plt.close()
-    
-    plt.plot(collect_train_accuracy, label='Train Accuracy')
-    plt.plot(collect_val_accuracy, label='Validation Accuracy')
-    plt.xlabel('Epochs')
-    plt.ylabel('Accuracy')
-    plt.title('Accuracy vs Epochs')
-    plt.legend()
-    plt.savefig(os.path.join(output_path, 'accuracy_plot.png'))
+    # Plotting both Loss and Accuracy in one horizontal subplot
+    fig, axs = plt.subplots(1, 2, figsize=(6, 3))
+
+    # Loss subplot
+    axs[0].plot(collect_train_loss, label='Train Loss')
+    axs[0].plot(collect_val_loss, label='Validation Loss')
+    axs[0].set_xlabel('Epochs', fontsize=12)
+    axs[0].set_ylabel('Loss', fontsize=12)
+    axs[0].set_title('Loss', fontsize=15)
+    axs[0].legend(fontsize=10)
+
+    # Accuracy subplot
+    axs[1].plot(collect_train_accuracy, label='Train Accuracy')
+    axs[1].plot(collect_val_accuracy, label='Validation Accuracy')
+    axs[1].set_xlabel('Epochs', fontsize=12)
+    axs[1].set_ylabel('Accuracy', fontsize=12)
+    axs[1].set_title('Accuracy', fontsize=15)
+    axs[1].legend(fontsize=10)
+
+    plt.tight_layout()
+    plt.savefig(os.path.join(output_path, 'training_plots.png'))
     plt.close()
     
     # Save the model
@@ -111,8 +115,8 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('--model_path', type = str, default = 'models', help='Path to save model')
     parser.add_argument('--n_samples', type = int, default = 1000, help='Number of samples to generate')
-    parser.add_argument('--noise_level', type = float, default = 0.5, help='Noise in dataset')
-    parser.add_argument('--synth_sig_len', type = int, default = 50, help='Length of the synthetic signals.')
+    parser.add_argument('--noise_level', type = float, default = 0.0, help='Noise in dataset')
+    parser.add_argument('--synth_sig_len', type = int, default = 100, help='Length of the synthetic signals.')
     parser.add_argument('--no_random_peaks', action='store_true', help='Add random peaks to the signals')
     parser.add_argument('--seed', type = int, default = 42, help='Seed for random number generator')
     parser.add_argument('--epochs', type = int, default = 100, help='Number of epochs to train for')

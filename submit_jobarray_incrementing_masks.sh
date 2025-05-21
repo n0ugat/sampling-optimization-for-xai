@@ -10,10 +10,10 @@ plotting_jobname="${jobname}_Ssm_p"
 
 dataset="synthetic"
 output_path="outputs"
-n_samples=10
+n_samples=20
 
 # If using AudioMNIST
-labeltype="gender" 
+labeltype="digit" 
 
 # If using synthetic
 noise_level=0.0
@@ -23,9 +23,9 @@ synth_sig_len=100
 cat <<EOF > jobarray.sh
 #!/bin/bash
 #BSUB -q hpc
-#BSUB -J ${jobname}[1-13]
+#BSUB -J ${jobname}[1-21]
 #BSUB -n 4
-#BSUB -W 06:00
+#BSUB -W 12:00
 #BSUB -R "span[hosts=1]"
 #BSUB -R "rusage[mem=1GB]"
 #BSUB -o outputs/hpclogs/jobarrays/${jobname}_%J_%I.out

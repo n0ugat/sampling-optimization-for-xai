@@ -2,8 +2,8 @@ import numpy as np
 
 def synthetic_dataset_generator(
     n_samples=1000, 
-    length=400, 
-    noiselevel=0.1, 
+    length=100, 
+    noiselevel=0.0, 
     add_random_peaks=True, 
     const_class=None, 
     seed=42):
@@ -25,13 +25,13 @@ def synthetic_dataset_generator(
     
     np.random.seed(seed)
     freq_comps = length // 2
-    frequency_classes = [int(freq_comps*0.2), int(freq_comps*0.5), int(freq_comps*0.8)] # Frequencies for the classes
+    frequency_classes = [int(freq_comps*0.2), int(freq_comps*0.5), int(freq_comps*0.8)]
     n_freqs = len(frequency_classes)
     data = np.random.normal(0, noiselevel, (n_samples, length))
     labels = []
 
     for i in range(n_samples):
-        # Select a constant class if provided, otherwise randomly selects one from the list of ints from 0 to 8
+        # Select a class based on the bitmask
         class_ = const_class if const_class is not None else np.random.choice(1 << n_freqs)
         t = np.arange(length)
         

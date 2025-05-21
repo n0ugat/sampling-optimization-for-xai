@@ -1,12 +1,18 @@
 import subprocess
 import string
 import random
+import argparse
+
+parser = argparse.ArgumentParser()
+parser.add_argument('--dataset', type = str, default = 'AudioMNIST', choices=['AudioMNIST', 'synthetic'], help='Dataset to use')
+parser.add_argument('--labeltype', type = str, default = 'digit', choices=['gender', 'digit'], help='Type of label to use for AudioMNIST')
+args = parser.parse_args()
 
 vars = {
     'data_path' : 'data/',
     'model_path': 'models',
     'output_path': 'outputs',
-    'dataset' : 'synthetic',
+    'dataset' : args.dataset,
     'debug_mode' : False,
     'save_signals' : False,
 # What to compute
@@ -19,14 +25,14 @@ vars = {
     'use_FiSURL' : True,
     'use_baselines' : True,
 # AudioMNIST
-    'labeltype' : 'gender',
+    'labeltype' : args.labeltype,
 # Synthetic
     'noise_level' : '0',
     'synth_sig_len' : '100',
     'no_random_peaks' : False,
-    'seed' : '42',
+    'seed' : '43',
 # Hyperparams
-    'n_samples' : '500',
+    'n_samples' : '1000',
     'n_masks' : '10000',
     'batch_size' : '10',
     'num_cells' : '15',

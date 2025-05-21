@@ -59,7 +59,7 @@ def main(args):
         evaluation['deletion curves'] = {}
     if args.compute_deletion_scores:
         print('Computing deletion scores')
-        quantiles = np.arange(0, 1, 0.05)
+        quantiles = np.arange(0, 0.51, 0.05)
         for key, value in attributions.items():
             if key == 'predictions' or key == 'labels':
                 continue

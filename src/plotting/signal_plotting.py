@@ -29,16 +29,16 @@ def plot_and_print_signal_from_path(speaker_idx, digit, sample_idx, gender, titl
     # Plot the signal
     fig, ax = plt.subplots(1,2, figsize=(6, 3))
     ax[0].plot(signal)
-    ax[0].set_title(f"Time-Domain")
-    ax[0].set_xlabel("Time")
-    ax[0].set_ylabel("Amplitude")
+    ax[0].set_title(f"Time-Domain", fontsize=14)
+    ax[0].set_xlabel("Time", fontsize=14)
+    ax[0].set_ylabel("Amplitude", fontsize=14)
     
     ax[1].plot(signal_fft_re)
-    ax[1].set_title(f"Frequency-Domain")
-    ax[1].set_xlabel("Frequency")
-    ax[1].set_ylabel("Magnitude")
+    ax[1].set_title(f"Frequency-Domain", fontsize=14)
+    ax[1].set_xlabel("Frequency", fontsize=14)
+    ax[1].set_ylabel("Magnitude", fontsize=14)
     
-    fig.suptitle(f"Gender {gender}, Digit {digit}", fontsize=16)
+    fig.suptitle(f"Gender {gender}, Digit {digit}", fontsize=18)
     if title:
         fig.suptitle(title, fontsize=16)
         
@@ -74,26 +74,23 @@ def plot_synthetic_signal(n_samples, length, noiselevel, seed, add_random_peaks,
     
     os.makedirs(f"outputs/figures/signals", exist_ok=True)
     
-    fig, ax = plt.subplots(1,1, figsize=(6, 3))
-    fig.suptitle(f"Synthetic Signal Example. Class: {class_}", fontsize=12)
-    ax.plot(np.linspace(0,1,len(signal)), signal)
-    ax.set_title(f"Time-Domain", fontsize=11)
-    ax.set_xlabel("Time")
-    ax.set_ylabel("Amplitude")
-    plt.tight_layout()
-    plt.savefig(f"outputs/figures/signals/synthetic_timedomain_length_{length}_nl_{noiselevel}_seed_{seed}_adp_{add_random_peaks}_cc_{const_class}.png")
-    plt.close()
-    fig, ax = plt.subplots(1,1, figsize=(6, 3))
-    ax.set_xlabel("Frequency")
-    ax.set_ylabel("Magnitude")
-    ax.set_title(f"Frequency-Domain with ground truth importance", fontsize=11)
+    fig, axs = plt.subplots(1,2, figsize=(12, 3))
+    fig.suptitle(f"Synthetic Signal Example", fontsize=24)
+    axs[0].plot(np.linspace(0,1,len(signal)), signal)
+    axs[0].set_title(f"Time-Domain", fontsize=18)
+    axs[0].set_xlabel("Time", fontsize=18)
+    axs[0].set_ylabel("Amplitude", fontsize=18)
+
+    axs[1].set_xlabel("Frequency", fontsize=18)
+    axs[1].set_ylabel("Magnitude", fontsize=18)
+    axs[1].set_title(f"Frequency-Domain", fontsize=18)
     ts_importance(
-            ax=ax, 
+            ax=axs[1], 
             importance=importance_gt, 
             timeseries=signal_fft_
     )
     plt.tight_layout()
-    plt.savefig(f"outputs/figures/signals/synthetic_freqdomain_length_{length}_nl_{noiselevel}_seed_{seed}_adp_{add_random_peaks}_cc_{const_class}.png")
+    plt.savefig(f"outputs/figures/signals/synthetic_timeandfreqdomain_signal.png")
     plt.close()
 
 

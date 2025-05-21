@@ -1,6 +1,6 @@
 #!/bin/bash
 
-jobname="Synthetic"
+jobname="AudioMNIST_Digit"
 
 # Generate the jobscript.sh
 cat <<EOF > jobscript.sh
@@ -10,7 +10,7 @@ cat <<EOF > jobscript.sh
 #BSUB -n 8
 #BSUB -W 20:00
 #BSUB -R "span[hosts=1]"
-#BSUB -R "rusage[mem=${memory_per_core}MB]"
+#BSUB -R "rusage[mem=512MB]"
 #BSUB -o outputs/hpclogs/${jobname}%J.out
 #BSUB -e outputs/hpclogs/${jobname}%J.err
 

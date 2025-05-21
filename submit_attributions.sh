@@ -1,6 +1,8 @@
 #!/bin/bash
 
-jobname="AudioMNIST_Digit"
+dataset="synthetic"
+labeltype="gender"
+jobname="Synthetic"
 
 # Generate the jobscript.sh
 cat <<EOF > jobscript.sh
@@ -8,7 +10,7 @@ cat <<EOF > jobscript.sh
 #BSUB -q gpuv100
 #BSUB -J $jobname
 #BSUB -n 8
-#BSUB -W 20:00
+#BSUB -W 10:00
 #BSUB -R "span[hosts=1]"
 #BSUB -R "rusage[mem=512MB]"
 #BSUB -o outputs/hpclogs/${jobname}%J.out
@@ -19,7 +21,7 @@ conda activate freqrise
 
 lscpu
 echo "-----------------------------------------"
-python run_processes.py
+python run_processes.py --dataset $dataset --labeltype $labeltype
 EOF
 
 # Submit the job

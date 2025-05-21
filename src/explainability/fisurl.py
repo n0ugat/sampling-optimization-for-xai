@@ -1,16 +1,13 @@
 from torch.fft import rfft
 import torch
 import torch.nn as nn
-# from src.explainability.masking_filterbank import filter_mask_generator
+
 from src.explainability.masking_filterbank import FilterbankMaskPolicy
-from src.utils import FilterBank, apply_fir_filterbank_mask, create_fir_filterbank
+from src.utils import apply_fir_filterbank_mask, create_fir_filterbank
 import numpy as np
 import os
 import pickle
 import time
-
-from src.plotting.quickplot import quickplot
-import shutil
 
 class FiSURL(nn.Module): # FiSURL: Filterbank Sampling Using Reinforcement Learning (WIP Title)
     def __init__(self, 
@@ -58,13 +55,12 @@ class FiSURL(nn.Module): # FiSURL: Filterbank Sampling Using Reinforcement Learn
         p = []
         input_fft = rfft(input_data)
         bandwidth = (input_data.shape[-1] / 2) /  self.num_banks
-        quickplot(input_fft[0,0].abs(), 'input_fft')
 
         # if self.use_rl:
         m_policy = FilterbankMaskPolicy(self.batch_size, input_data.shape, self.num_banks, self.device)
         optimizer = torch.optim.Adam(m_policy.parameters(), lr=self.lr)
         baseline = 0.0
-        filterbank = create_fir_filterbank(self.num_banks, input_data.shape[-1], self.num_taps)
+        filterbank = create_fir_filterbank(self.num_banks, input_data.shape[-1], self.num_taps, device=self.device)
 
         with torch.no_grad(): 
             # Get predictions of the model with the original input
@@ -111,7 +107,7 @@ class FiSURL(nn.Module): # FiSURL: Filterbank Sampling Using Reinforcement Learn
             mean_reward = rewards.mean()
             baseline = self.decay * baseline + (1 - self.decay) * mean_reward # Update the baseline
             loss = -((rewards - baseline) * log_probs).mean() # Reinforce loss, negative because we want to maximize the expected reward
-            quickplot(torch.sigmoid(m_policy.logits).detach().cpu(), f'Probs idx_{idx} i_{j}. Reward: {mean_reward.cpu().item()}')
+            
             optimizer.zero_grad() # Zero the gradients  
             loss.backward() # Backpropagation
             optimizer.step() # Update the policy network
@@ -141,11 +137,6 @@ class FiSURL(nn.Module): # FiSURL: Filterbank Sampling Using Reinforcement Learn
             sample_path = os.path.join(self.save_signals_path, f'sample_{idx}.pkl')
             with open(sample_path, mode='wb') as f:
                 pickle.dump(output_dict, f)
-        quickplot(importance.squeeze().cpu(), f'FiSURL Importance idx_{idx}')
-        print('Target Class:', target_class)
-        print('Prediction:', torch.argmax(pred_original).cpu())
-        breakpoint()
-        shutil.rmtree('temp')
         return importance
 
     def forward_dataloader(self, dataloader):

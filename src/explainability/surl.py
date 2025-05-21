@@ -10,9 +10,6 @@ from torch.fft import irfft as tifft
 
 from src.explainability.masking_surl import MaskPolicy
 
-from src.plotting.quickplot import quickplot
-import shutil
-
 class SURL(nn.Module):
     def __init__(self,
                  encoder: nn.Module,
@@ -60,7 +57,6 @@ class SURL(nn.Module):
         p = []
         # cast data to frequency domain
         input_fft = tfft(input_data) 
-        quickplot(input_fft[0].abs(), 'input_fft')
 
         mask_type = torch.complex64
         
@@ -110,7 +106,7 @@ class SURL(nn.Module):
             mean_reward = rewards.mean()
             baseline = self.decay * baseline + (1 - self.decay) * mean_reward # Update the baseline
             loss = -((rewards - baseline) * log_probs).mean() # Reinforce loss, negative because we want to maximize the expected reward
-            quickplot(torch.sigmoid(m_policy.logits).detach().cpu(), f'SURL probs idx_{idx} i_{i}. Reward: {mean_reward.cpu().item()}')
+            
             optimizer.zero_grad() # Zero the gradients  
             loss.backward() # Backpropagation
             optimizer.step() # Update the policy network
@@ -141,11 +137,6 @@ class SURL(nn.Module):
             sample_path = os.path.join(self.save_signals_path, f'sample_{idx}.pkl')
             with open(sample_path, mode='wb') as f:
                 pickle.dump(output_dict, f)
-        quickplot(importance.squeeze().cpu(), f'SURL Importance idx_{idx}')
-        print('Target Class:', target_class)
-        print('Prediction:', torch.argmax(pred_original).cpu())
-        breakpoint()
-        shutil.rmtree('temp')
         return importance 
     
     def forward_dataloader(self, dataloader, num_cells):

@@ -2,7 +2,7 @@ import torch
 from scipy.signal import firwin
 import numpy as np
 
-def create_fir_filterbank(n_filters, sample_rate, filter_order=101):
+def create_fir_filterbank(n_filters, sample_rate, filter_order=101, device='cpu'):
     """
     Creates a bank of FIR bandpass filters using scipy's firwin.
     Returns a list of filters (each of length filter_order).
@@ -22,7 +22,7 @@ def create_fir_filterbank(n_filters, sample_rate, filter_order=101):
         else:
             coeffs = firwin(filter_order, [low, high], pass_zero=False)
 
-        filters.append(torch.tensor(coeffs, dtype=torch.float32))
+        filters.append(torch.tensor(coeffs, dtype=torch.float32, device=device))
 
     return filters  # List of tensors
 

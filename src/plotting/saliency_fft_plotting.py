@@ -12,7 +12,7 @@ sys.path.append(repo_dir)
 
 from src.plotting.importance_plots import ts_importance
 
-def plot_saliency_with_fft(input_path, output_path, dataname,  method_name=None):
+def plot_saliency_with_fft(input_path, output_path, dataname,  method_name=None, cutoff=None):
     with open(input_path, 'rb') as f:
         data = pickle.load(f)
 
@@ -22,6 +22,10 @@ def plot_saliency_with_fft(input_path, output_path, dataname,  method_name=None)
     pred_class = data['prediction']
     pred_correct = target_class == pred_class
     
+    if cutoff is not None:
+        quantile = np.quantile(importance, cutoff)
+        importance = np.where(importance > quantile, importance, 0)
+    
     fig, ax = plt.subplots(1,1, figsize=(6, 4))
     ts_importance(
             ax=ax, 
@@ -29,7 +33,7 @@ def plot_saliency_with_fft(input_path, output_path, dataname,  method_name=None)
             timeseries=(signal_fft.numpy() if not isinstance(signal_fft, np.ndarray) else importance))
     plt.xlabel('Frequency')
     plt.ylabel('Magnitude')
-    plt.title(f'{dataname} using {method_name}{"_Incorrect Prediction" if not pred_correct else ""}')
+    plt.title(f'{dataname} using {method_name}{"_Incorrect Prediction" if not pred_correct else ""}{" cutoff=0.8" if cutoff is not None else ""}')
     plt.tight_layout()
     os.makedirs(os.path.dirname(output_path), exist_ok=True)
     plt.savefig(output_path)
@@ -48,6 +52,8 @@ if __name__ == "__main__":
     parser.add_argument('--dataset', type = str, default = 'AudioMNIST', choices=['AudioMNIST', 'synthetic'], help='Dataset to use')
     # AudioMNIST
     parser.add_argument('--labeltype', type = str, default = 'digit', choices=['digit', 'gender'], help='Labeltype to use for AudioMNIST')
+    
+    parser.add_argument('--importance_cutoff', type = eval, default = 0.8, help='Cutoff percent for FreqRISE, SURL and FiSURL during evaluation')
     args = parser.parse_args()
     
     args.method_name = args.method_name.lower()
@@ -88,4 +94,5 @@ if __name__ == "__main__":
                     output_paths.append(output_path)
                 
                 for input_path, output_path in zip(input_paths, output_paths):
+                    plot_saliency_with_fft(input_path, output_path.replace('.png', f'_importance_fft_co{args.importance_cutoff}.png'), dataname, method_name, cutoff = args.importance_cutoff)
                     plot_saliency_with_fft(input_path, output_path.replace('.png', '_importance_fft.png'), dataname, method_name)

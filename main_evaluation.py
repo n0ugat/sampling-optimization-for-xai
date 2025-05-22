@@ -65,7 +65,7 @@ def main(args):
                 continue
             if (not key in evaluation['deletion curves']) or args.debug_mode:
                 if key.startswith('freqrise') or key.startswith('surl') or key.startswith('fisurl'):
-                    cutoff = args.freqrise_cutoff
+                    cutoff = args.importance_cutoff
                 else:
                     cutoff = None
                 if args.incrementing_masks and len(value) == 2:
@@ -91,7 +91,7 @@ def main(args):
                     value = value[0]
                 value = torch.cat(value).numpy()
                 if key.startswith('freqrise') or key.startswith('surl') or key.startswith('fisurl'):
-                    cutoff = args.freqrise_cutoff
+                    cutoff = args.importance_cutoff
                     only_pos = False
                 else:
                     cutoff = None
@@ -111,7 +111,7 @@ def main(args):
                     value = value[0]
                 value = torch.cat(value).numpy()
                 if key.startswith('freqrise') or key.startswith('surl') or key.startswith('fisurl'):
-                    cutoff = args.freqrise_cutoff
+                    cutoff = args.importance_cutoff
                     only_pos = False
                 else:
                     cutoff = None
@@ -143,7 +143,7 @@ if __name__ == '__main__':
     parser.add_argument('--no_random_peaks', action='store_true', help='Add random peaks to the signals')
     parser.add_argument('--seed', type = int, default = 42, help='Seed for random number generator')
     
-    parser.add_argument('--freqrise_cutoff', type = eval, default = None, help='Cutoff percent for FreqRISE during evaluation')
+    parser.add_argument('--importance_cutoff', type = eval, default = None, help='Cutoff percent for FreqRISE, SURL and FiSURL during evaluation')
 
     parser.add_argument('--compute_deletion_scores', action='store_true', help='Compute deletion scores')
     parser.add_argument('--compute_localization_scores', action='store_true', help='Compute localization scores. NB only for synthetic data.')

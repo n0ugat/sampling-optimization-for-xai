@@ -1,6 +1,7 @@
 import pickle
 import argparse
 import os
+import numpy as np
 
 def main(args):
     # Create path where the evaluation data is stored
@@ -23,6 +24,8 @@ def main(args):
     output_dir = os.path.join(args.output_path, 'evaluation_scores')
     os.makedirs(output_dir, exist_ok=True)
     
+    z_score = 1.96 # For 95% confidence interval
+    
     # Write the file with the evaluation scores
     with open(os.path.join(output_dir, evaluation_path.replace(f'{args.output_path}/', '')).replace('.pkl', '.txt'), 'w') as output_file:
         output_file.write('Evaluation Scores:\n')
@@ -38,11 +41,11 @@ def main(args):
         # Write evaluation scores for every method in the data
         for method in data['complexity scores'].keys():
             output_file.write(f'\n{method}\n')
-            output_file.write(f'Complexity Score: {float(data['complexity scores'][method])}\n')
-            output_file.write(f'Faithfulness Score: {float(data['deletion curves'][method]['AUC'])}\n')
+            output_file.write(f'Complexity Score: {float(data['complexity scores'][method]['mean'])} +- {float(z_score * data['complexity scores'][method]['std'] / np.sqrt(data['complexity scores'][method]['n']))}\n')
+            output_file.write(f'Faithfulness Score: {float(data['deletion curves'][method]['AUC'])} +- {float(z_score * data['deletion curves'][method]['AUC_std'] / np.sqrt(data['deletion curves'][method]['n']))}\n')
             # Only synthetic dataset has a localization score
             if args.dataset == 'synthetic':
-                output_file.write(f'Localization Score: {float(data['localization scores'][method])}\n')
+                output_file.write(f'Localization Score: {float(data['localization scores'][method]['mean'])} +- {float(z_score * data['localization scores'][method]['std'] / np.sqrt(data['localization scores'][method]['n']))}\n')
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()

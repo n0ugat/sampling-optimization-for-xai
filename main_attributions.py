@@ -260,6 +260,7 @@ if __name__ == '__main__':
     parser.add_argument('--batch_size', type = int, default = 10, help='Batch size for masks')
     parser.add_argument('--num_cells', type = int, default = 10, help='Number of cells in mask. Should be lower than synth_sig_len if using synthetic dataset')
     parser.add_argument('--use_softmax', action='store_true', help='use softmax for FreqRISE')
+    parser.add_argument('--signal_batch_size', type = int, default = None, help='Number of signals in each batch')
     # Baselines
     parser.add_argument('--use_baselines', action='store_true', help='Run baseline models')
     # FreqRISE

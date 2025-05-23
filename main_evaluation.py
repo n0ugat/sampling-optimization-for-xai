@@ -70,7 +70,8 @@ def main(args):
                     cutoff = None
                 if args.incrementing_masks and len(value) == 2:
                     value = value[0]
-                evaluation['deletion curves'][key] = deletion_curves(model, test_loader, value, quantiles, device=device, cutoff = cutoff, method_name=key)
+                d_scores = deletion_curves(model, test_loader, value, quantiles, device=device, cutoff=cutoff, method_name=key)
+                evaluation['deletion curves'][key] = d_scores
 
         if not 'random' in evaluation['deletion curves']:
             # compute random deletion scores
@@ -96,7 +97,11 @@ def main(args):
                 else:
                     cutoff = None
                     only_pos = True
-                evaluation['complexity scores'][key] = np.mean(complexity_scores(value, cutoff = cutoff, only_pos = only_pos))
+                evaluation['complexity scores'][key] = {}
+                c_scores = complexity_scores(value, cutoff = cutoff, only_pos = only_pos)
+                evaluation['complexity scores'][key]['mean'] = np.mean(c_scores)
+                evaluation['complexity scores'][key]['std'] = np.std(c_scores)
+                evaluation['complexity scores'][key]['n'] = len(c_scores)
         print('Complexity scores computed')
 
     if not 'localization scores' in evaluation and args.dataset == 'synthetic':
@@ -116,7 +121,11 @@ def main(args):
                 else:
                     cutoff = None
                     only_pos = True
-                evaluation['localization scores'][key] = np.mean(localization_scores(value, attributions['labels'], cutoff = cutoff, only_pos = only_pos))
+                evaluation['localization scores'][key] = {}
+                l_scores = localization_scores(value, attributions['labels'], cutoff = cutoff, only_pos = only_pos)
+                evaluation['localization scores'][key]['mean'] = np.mean(l_scores)
+                evaluation['localization scores'][key]['std'] = np.std(l_scores)
+                evaluation['localization scores'][key]['n'] = len(l_scores)
         print('Localization scores computed')
     
     with open(output_path, 'wb') as f:
@@ -135,6 +144,7 @@ if __name__ == '__main__':
     parser.add_argument('--debug_mode', action='store_true', help='Run in debug mode. Stores outputs in deletable files')
     parser.add_argument('--n_samples', type = int, default = 10, help='Number of samples to use for evaluation')
     parser.add_argument('--incrementing_masks', action='store_true', help='Run multiple processes on hpc with incrementing masks.')
+    parser.add_argument('--signal_batch_size', type = int, default = 64, help='Number of signals in each batch')
     # AudioMNIST
     parser.add_argument('--labeltype', type = str, default = 'gender', choices=['gender', 'digit'], help='Type of label to use for AudioMNIST')
     # Synthetic

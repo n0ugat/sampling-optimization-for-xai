@@ -14,13 +14,21 @@ from src.lrp import lrp_utils
 def deletion_curves(model, test_loader, importance, quantiles, device = 'cpu', cutoff = None, filterbank = None, method_name = ''):
     deletion = {
         'mean_prob': [],
+        'mean_probs': [],
         'quantiles': quantiles
     }
     for quantile in quantiles:
-        mean_true_class_prob = mask_and_predict(model, test_loader, importance, quantile, device = device, cutoff = cutoff, filterbank = filterbank, method_name = method_name)
-        deletion['mean_prob'].append(mean_true_class_prob)
+        mean_true_class_probs = mask_and_predict(model, test_loader, importance, quantile, device = device, cutoff = cutoff, filterbank = filterbank, method_name = method_name)
+        deletion['mean_prob'].append(np.mean(mean_true_class_probs))
+        deletion['mean_probs'].append(mean_true_class_probs)
+    deletion['mean_probs'] = np.array(deletion['mean_probs']).transpose()
     auc = np.trapz(deletion['mean_prob'], deletion['quantiles'])
     deletion['AUC'] = auc
+    auc_s = []
+    for i in range(len(deletion['mean_probs'])):
+        auc_s.append(np.trapz(deletion['mean_probs'][i], deletion['quantiles']))
+    deletion['AUC_std'] = np.std(auc_s)
+    deletion['n'] = len(deletion['mean_probs'])
     return deletion
 
 def complexity_scores(attributions, cutoff = None, only_pos = False):
@@ -70,7 +78,9 @@ def mask_and_predict(model, test_loader, importance, quantile, device = 'cpu', c
     model.eval().to(device)
     with torch.no_grad():
         total = 0
+        total_batches = []
         mean_true_class_prob = 0
+        mean_true_class_prob_batches = []
         for i, batch in enumerate(test_loader):
             data, true_label = batch
             data = torch.fft.rfft(data, dim=-1).to(device)
@@ -98,7 +108,6 @@ def mask_and_predict(model, test_loader, importance, quantile, device = 'cpu', c
                     # set all values below mean to 0
                     flattened_imp[flattened_imp < cut] = 0
                     imp = flattened_imp.view(shape)
-
             # take q percent largest values 
             flattened_imp = imp.reshape(shape[0], -1)
             k = int(quantile * flattened_imp.size(1))
@@ -112,11 +121,16 @@ def mask_and_predict(model, test_loader, importance, quantile, device = 'cpu', c
 
             data = torch.fft.irfft(data, dim=-1)
             output = model(data.float()).detach().cpu()
-            total += true_label.size(0)
+            total_batches.append(true_label.size(0))
+            total += total_batches[-1]
             # one hot encode true label
-            mean_true_class_prob += torch.take_along_dim(F.softmax(output, dim=1), true_label.unsqueeze(1), dim = 1).sum().item()
+            mean_true_class_prob_batches.append(torch.take_along_dim(F.softmax(output, dim=1), true_label.unsqueeze(1), dim = 1).sum().item())
+            mean_true_class_prob += mean_true_class_prob_batches[-1]
 
-    return mean_true_class_prob / total
+    a = np.array(mean_true_class_prob_batches)
+    b = np.array(total_batches)
+    mean_probs = a / b
+    return mean_probs
 
 def compute_gradient_scores(model, testloader, attr_method, device='cpu', save_signals_path=None):
     lrp_scores = []

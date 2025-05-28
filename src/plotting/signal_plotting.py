@@ -87,7 +87,8 @@ def plot_synthetic_signal(n_samples, length, noiselevel, seed, add_random_peaks,
     ts_importance(
             ax=axs[1], 
             importance=importance_gt, 
-            timeseries=signal_fft_
+            timeseries=signal_fft_,
+            colorbar=False
     )
     plt.tight_layout()
     plt.savefig(f"outputs/figures/signals/synthetic_timeandfreqdomain_signal.png")

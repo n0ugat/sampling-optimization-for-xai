@@ -4,7 +4,7 @@ from matplotlib.colors import Normalize
 from matplotlib.cm import ScalarMappable
 import numpy as np
 
-def ts_importance(ax, importance, timeseries, width = 1.0, cmap = 'Greens', alpha = 0.7):
+def ts_importance(ax, importance, timeseries, width = 1.0, cmap = 'Greens', alpha = 0.7, colorbar = True):
     axis = np.arange(len(timeseries))
     
     my_cmap = cm.get_cmap(cmap)
@@ -27,7 +27,8 @@ def ts_importance(ax, importance, timeseries, width = 1.0, cmap = 'Greens', alph
     ax.set_ylim(timeseries.min(), timeseries.max() + (timeseries.max() - timeseries.min()) * 0.10)
     
     # Add colorbar
-    sm = ScalarMappable(cmap=my_cmap, norm=norm)
-    sm.set_array([])  # Required for colorbar to work correctly
-    cbar = ax.figure.colorbar(sm, ax=ax, orientation='vertical')
-    cbar.set_label('Importance')
+    if colorbar:
+       sm = ScalarMappable(cmap=my_cmap, norm=norm)
+       sm.set_array([])  # Required for colorbar to work correctly
+       cbar = ax.figure.colorbar(sm, ax=ax, orientation='vertical')
+       cbar.set_label('Importance')

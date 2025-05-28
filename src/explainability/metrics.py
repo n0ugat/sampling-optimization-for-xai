@@ -1,6 +1,8 @@
 import numpy as np
 import torch
 
+# Code from https://github.com/theabrusch/FreqRISE
+
 def relevance_rank_accuracy(relevance, true_label):
     if isinstance(relevance, torch.Tensor):
         relevance = relevance.numpy()

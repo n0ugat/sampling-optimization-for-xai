@@ -4,6 +4,8 @@ import os
 from src.models import AudioNet, LinearModel
 from train_synthetic import train_synthetic
 
+# Code inspired by https://github.com/theabrusch/FreqRISE
+
 def load_model(args):
     if args.dataset == 'AudioMNIST':
         model_path = f'{args.model_path}/AudioNet_{args.labeltype}.pt'

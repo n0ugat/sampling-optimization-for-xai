@@ -9,12 +9,13 @@ from src.explainability import FreqRISE, FiSURL, SURL, compute_gradient_scores
 from src.data import load_data
 from src.models import load_model
 
+# Code inspired by https://github.com/theabrusch/FreqRISE
+
 def main(args):
     print('Loading data')
     test_loader = load_data(args)
     print('Loading model')
     model = load_model(args)
-    # device = 'cuda' if torch.cuda.is_available() else 'mps' if torch.backends.mps.is_available() and torch.backends.mps.is_built() else 'cpu'
     device = 'cuda' if torch.cuda.is_available() else 'cpu'
     print(f'Using device: {device}')
     
@@ -211,7 +212,6 @@ def main(args):
 
     # get predictions and labels
     if not 'predictions' in attributions:
-        # get predictions and labels
         predictions = []
         labels = []
         for data, target in test_loader:
@@ -280,6 +280,7 @@ if __name__ == '__main__':
     
     args = parser.parse_args()
     
+    # Everything in if-statement is only run if the script using a job array on a HPC cluster.
     if args.job_idx and args.job_name:
         chars = string.ascii_letters + string.digits  # a-zA-Z0-9
         args.random_ID = ''.join(random.choices(chars, k=8))

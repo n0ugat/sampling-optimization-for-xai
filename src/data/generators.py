@@ -52,12 +52,3 @@ def synthetic_dataset_generator(
 
         labels.append([class_])
     return data, labels
-
-if __name__ == "__main__":
-    import pickle
-    data, labels = synthetic_dataset_generator(n_samples=10, length=400, noiselevel=0.5, seed=42)
-    print(data.shape)
-    print(labels)
-    
-    with open('notebooks/samples/synthetic_test_dataset.pkl', 'wb') as f:
-        pickle.dump({"signals":data, "labels":labels}, f)

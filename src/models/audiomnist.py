@@ -2,6 +2,8 @@ import torch.nn as nn
 import torch
 import numpy as np
 
+# Code from https://github.com/theabrusch/FreqRISE
+
 def conv1d_outputsize(input_shape, kernel_size, stride, padding):
     h_in = input_shape
     h_out = ((h_in + 2*padding - (kernel_size - 1) - 1) // stride) + 1

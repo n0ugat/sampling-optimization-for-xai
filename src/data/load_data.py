@@ -4,6 +4,8 @@ from torch.utils.data import DataLoader, TensorDataset
 from src.data.generators import synthetic_dataset_generator
 from src.data.dataloader import AudioNetDataset
 
+# Code inspired by https://github.com/theabrusch/FreqRISE
+
 def load_data(args):
     if args.dataset == 'synthetic':
         test_data, test_labels = synthetic_dataset_generator(args.n_samples, length=args.synth_sig_len, noiselevel=args.noise_level, add_random_peaks=not args.no_random_peaks, seed=None)

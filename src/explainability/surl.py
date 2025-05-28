@@ -42,15 +42,16 @@ class SURL(nn.Module):
 
     def forward(self, input_data, target_class, num_cells, idx):
         """
-        Compute the saliency map of the input data using FreqRISE.
+        Compute the saliency map of the input data using SURL.
         Args:
             input_data: torch.Tensor
                 The input data for which to compute the saliency map.
-            mask_generator: function
-                A function that generates masks for the input data.
-            **kwargs: dict
-                Additional keyword arguments to pass to the mask
-                generator function.
+            target_class: torch.Tensor
+                The target class for which to compute the saliency map.
+            num_cells: int
+                The number of cells in the grid.
+            idx: int
+                The index of the sample in the batch.
         Returns:
             torch.Tensor: The saliency map of the input data.
         """
@@ -89,8 +90,7 @@ class SURL(nn.Module):
                 if self.use_softmax:
                     predictions = torch.softmax(predictions, dim=-1)
 
-            # sals = torch.matmul(predictions.unsqueeze(2).float(), masks.abs().float()).transpose(1,2)
-            sal = torch.matmul(predictions.transpose(0,1).float(), masks.view(self.batch_size, -1).abs().float()).transpose(0,1).unsqueeze(0) # Compute saliency
+            sal = torch.matmul(predictions.transpose(0,1).float(), masks.view(self.batch_size, -1).abs().float()).transpose(0,1).unsqueeze(0)
             p.append(sal)
 
             # Faithfulness: how close is the masked prediction to original
@@ -102,7 +102,7 @@ class SURL(nn.Module):
             # encourage fewer active cells
 
             # Higher reward = better. Highest possible reward = 0, and that is if the outputs are identical after every frequency is masked away
-            rewards = (self.alpha * faithfulness_rewards - self.beta * sparsity_penalties)# .to(self.device)
+            rewards = (self.alpha * faithfulness_rewards - self.beta * sparsity_penalties)
             mean_reward = rewards.mean()
             baseline = self.decay * baseline + (1 - self.decay) * mean_reward # Update the baseline
             loss = -((rewards - baseline) * log_probs).mean() # Reinforce loss, negative because we want to maximize the expected reward
@@ -118,7 +118,7 @@ class SURL(nn.Module):
 
         importance = torch.cat(p, dim=0).sum(dim=0)/(self.num_batches*self.batch_size)
         # Selects the importance values for the given class y
-        importance = importance.squeeze()[...,target_class]#/probability_of_drop
+        importance = importance.squeeze()[...,target_class]
         # min max normalize
         importance = (importance - importance.min()) / (importance.max() - importance.min())
         if self.save_signals_path:
@@ -147,10 +147,8 @@ class SURL(nn.Module):
                 The dataloader containing the input data for which to compute the saliency map.
             num_cells: int
                 The number of cells in the grid.
-            probability_of_drop: float
-                The probability of dropping a cell.
         Returns:
-            list: The saliency maps of the input data. ??? (I don't know)
+            list: The saliency maps of the input data. 
         """
         surl_scores = [] 
         i = 0

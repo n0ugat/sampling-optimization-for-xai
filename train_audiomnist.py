@@ -9,6 +9,7 @@ from torch.utils.data import DataLoader
 from src.models import AudioNet, EarlyStopping
 from src.data import AudioNetDataset
 
+# Code from https://github.com/theabrusch/FreqRISE
 
 def main(args):
     dset = AudioNetDataset(args.data_path, True, 'train', splits = [0], labeltype = args.labeltype)

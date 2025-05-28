@@ -3,13 +3,14 @@ import pickle
 import os
 import torch
 import torch.nn.functional as F
-from itertools import chain, combinations
 
 from quantus.metrics import Complexity
 
 from src.explainability.metrics import relevance_rank_accuracy
 from src.lrp import dft_lrp
 from src.lrp import lrp_utils
+
+# Code heavily inspired by https://github.com/theabrusch/FreqRISE
 
 def deletion_curves(model, test_loader, importance, quantiles, device = 'cpu', cutoff = None, filterbank = None, method_name = ''):
     deletion = {

@@ -4,6 +4,7 @@ import torch.nn as nn
 import src.lrp.dft_utils as dft_utils
 
 # code from https://github.com/jvielhaben/DFT-LRP
+# With very minor modifications to make it compatible with the current codebase (for example updating the device handling)
 
 class DFTLRP():
     def __init__(self, signal_length, precision=32, device='cpu', leverage_symmetry=False, window_shift=None, window_width=None, window_shape=None, create_inverse=True, create_transpose_inverse=True, create_forward=True, create_dft=True, create_stdft=True) -> None:

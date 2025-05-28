@@ -7,6 +7,7 @@ import pickle
 import os
 import numpy as np
 
+# Code inspired by https://github.com/theabrusch/FreqRISE
 
 def main(args):
     print('Loading data')
@@ -34,7 +35,6 @@ def main(args):
         with open(attributions_path, 'rb') as f:
             attributions = pickle.load(f)
     else:
-        # raise error
         raise FileNotFoundError(f'Attributions not found at {attributions_path}')
     
     if os.path.exists(output_path):
@@ -76,8 +76,6 @@ def main(args):
         if not 'random' in evaluation['deletion curves']:
             # compute random deletion scores
             evaluation['deletion curves']['random'] = deletion_curves(model, test_loader, 'random', quantiles, device = device, method_name='random')
-            # get amplitude mask
-            # evaluation['deletion curves']['amplitude'] = deletion_curves(model, test_loader, 'amplitude', quantiles, device = device, method_name='amplitude')
         print('Deletion scores computed')
     
     if not 'complexity scores' in evaluation:

@@ -1,6 +1,7 @@
 import numpy as np
 
 # code from https://github.com/jvielhaben/DFT-LRP
+
 def create_fourier_weights(signal_length, inverse=False, symmetry=False, real=False):  
     """
     symmetry: use that DFT of real signal is symmteric and use only half of transformed signal for inverse trafo
@@ -70,8 +71,6 @@ def create_short_time_fourier_weights(signal_length, shift, window_width, window
         window_function = rectangle_window
     elif window_shape=="halfsine":
         window_function = halfsine_window
-    #elif window_shape=="hann":
-    #    window_function = hann_window
 
     W_mn = create_window_mask(shift, window_width, signal_length, window_function)
     

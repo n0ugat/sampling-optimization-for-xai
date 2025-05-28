@@ -9,14 +9,14 @@ import os
 import pickle
 import time
 
-class FiSURL(nn.Module): # FiSURL: Filterbank Sampling Using Reinforcement Learning (WIP Title)
+class FiSURL(nn.Module): # FiSURL: Filterbank Sampling Using Reinforcement Learning
     def __init__(self, 
                 encoder: nn.Module, # Black-box model to explain
                 num_taps: int = 501,
                 num_banks: int = 10,
                 batch_size: int = 10, 
                 num_batches: int = 300,
-                keep_ratio: float = 0.05, # Between 0.05 and 0.15 in FLEXtime
+                keep_ratio: float = 0.05,
                 device: str = 'cpu',
                 use_softmax = False,
                 lr: float = 1e-4,
@@ -51,7 +51,19 @@ class FiSURL(nn.Module): # FiSURL: Filterbank Sampling Using Reinforcement Learn
         self.num_masks = num_batches * batch_size
         self.save_signals_path = save_signals_path
 
-    def forward(self, input_data, target_class, idx): # mask_generator, **kwargs):
+    def forward(self, input_data, target_class, idx):
+        """
+        Compute the saliency map of the input data using FiSURL.
+        Args:
+            input_data: torch.Tensor
+                The input data for which to compute the saliency map.
+            target_class: torch.Tensor
+                The target class for which to compute the saliency map.
+            idx: int
+                The index of the sample in the batch.
+        Returns:
+            torch.Tensor: The saliency map of the input data.
+        """
         p = []
         input_fft = rfft(input_data)
         bandwidth = (input_data.shape[-1] / 2) /  self.num_banks
@@ -101,7 +113,7 @@ class FiSURL(nn.Module): # FiSURL: Filterbank Sampling Using Reinforcement Learn
             # sparsity_penalties = mask_sizes  # encourage fewer active cells
             sparsity_penalties = torch.max(mask_sizes - torch.tensor(self.keep_ratio).to(self.device), torch.zeros(self.batch_size).to(self.device))
 
-            rewards = (self.alpha * faithfulness_rewards - self.beta * sparsity_penalties)#.to(self.device)
+            rewards = (self.alpha * faithfulness_rewards - self.beta * sparsity_penalties)
 
             mean_reward = rewards.mean()
             baseline = self.decay * baseline + (1 - self.decay) * mean_reward # Update the baseline
@@ -118,7 +130,7 @@ class FiSURL(nn.Module): # FiSURL: Filterbank Sampling Using Reinforcement Learn
 
         importance = torch.cat(p, dim=0).sum(dim=0)/(self.num_batches*self.batch_size)
         # Selects the importance values for the given class y
-        importance = importance.cpu().squeeze()[...,target_class] # /kwargs.get('probability_of_drop')
+        importance = importance.cpu().squeeze()[...,target_class]
         importance = (importance - importance.min()) / (importance.max() - importance.min()) # min max normalize
         if self.save_signals_path:
             run_time = time.time() - start_time
@@ -146,9 +158,7 @@ class FiSURL(nn.Module): # FiSURL: Filterbank Sampling Using Reinforcement Learn
             self.filterbank = create_fir_filterbank(self.num_banks, data.shape[-1], self.num_taps, device=self.device)
             batch_scores = []
             print("Computing batch", i+1, "/", len(dataloader))
-            # for sample, y in tqdm(zip(data, target), desc="Computing samples", total=data.shape[0]):
             for j, (sample, y) in enumerate(zip(data, target)):
-            # for j, (sample, y) in tqdm(enumerate(zip(data, target)), desc="Computing samples", total=data.shape[0]):
                 print("Computing sample", j+1, "/", len(data))
                 sample = sample.float().to(self.device)
                 y = y.to(self.device)

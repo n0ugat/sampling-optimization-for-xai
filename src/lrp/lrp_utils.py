@@ -9,6 +9,7 @@ import zennit.attribution
 from functools import partial
 
 # code from https://github.com/jvielhaben/DFT-LRP
+# With very minor modifications to work with torch tensors and device handling
 
 def one_hot(output, index=0):
     '''Get the one-hot encoded value at the provided indices in dim=1'''
@@ -31,15 +32,15 @@ def zennit_relevance(input, model, target, attribution_method="lrp", zennit_choi
         with warnings.catch_warnings():
             warnings.simplefilter("ignore", category=UserWarning)
             _, relevance = attributer(input, partial(one_hot, index=target))
-        relevance = relevance.detach()#.cpu().numpy()
+        relevance = relevance.detach()
         if attribution_method=="gxi":
-            relevance = relevance * input.detach()#.cpu().numpy()
+            relevance = relevance * input.detach()
         elif attribution_method=="sensitivity":
             relevance = relevance**2
     elif attribution_method=="ig":
         attributer = zennit.attribution.IntegratedGradients(model)
         _, relevance = attributer(input, partial(one_hot, index=target))
-        relevance = relevance.detach()#.cpu().numpy()
+        relevance = relevance.detach()
     return relevance
 
 

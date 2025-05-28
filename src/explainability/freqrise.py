@@ -10,6 +10,8 @@ import pickle
 
 from src.explainability.masking_freqrise import mask_generator
 
+# Code from https://github.com/theabrusch/FreqRISE
+
 class FreqRISE(nn.Module):
     def __init__(self,
                  encoder: nn.Module,
@@ -36,14 +38,20 @@ class FreqRISE(nn.Module):
         Args:
             input_data: torch.Tensor
                 The input data for which to compute the saliency map.
+            target_class: torch.Tensor
+                The target class for which to compute the saliency map.
+            probability_of_drop: float
+                The probability of dropping a cell.
             mask_generator: function
                 A function that generates masks for the input data.
-            **kwargs: dict
-                Additional keyword arguments to pass to the mask
-                generator function.
+            num_cells: int
+                The number of cells in the grid.
+            idx: int
+                The index of the sample in the batch.
         Returns:
             torch.Tensor: The saliency map of the input data.
         """
+        # Initialize list to store saliency maps
         p = []
         input_data = input_data.unsqueeze(0).to(self.device)
         # Fast Fourier Transform (To frequency domain)
@@ -69,7 +77,6 @@ class FreqRISE(nn.Module):
                     # get predictions of the model with the masked input
                     predictions = self.encoder(x_mask.float(), only_feats = False).detach()
                 if self.use_softmax:
-                    # Why use softmax here?
                     predictions = torch.nn.functional.softmax(predictions, dim=1)
                 if self.device == 'mps':
                     predictions = predictions.cpu()
@@ -94,7 +101,7 @@ class FreqRISE(nn.Module):
             sample_path = os.path.join(self.save_signals_path, f'sample_{idx}.pkl')
             with open(sample_path, mode='wb') as f:
                 pickle.dump(output_dict, f)
-        return importance # Importance here is the saliency map
+        return importance
     
     def forward_dataloader(self, dataloader, num_cells, probability_of_drop):
         """
@@ -107,13 +114,13 @@ class FreqRISE(nn.Module):
             probability_of_drop: float
                 The probability of dropping a cell.
         Returns:
-            list: The saliency maps of the input data. ??? (I don't know)
+            list: The saliency maps of the input data. 
         """
-        freqrise_scores = [] # List to store the saliency maps ??? (I don't know)
+        freqrise_scores = []
         i = 0
             
         for data, target in dataloader:
-            batch_scores = [] # List to store the saliency maps for the current batch ??? (I don't know)
+            batch_scores = []
             print("Computing batch", i+1, "/", len(dataloader))
             i+=1
             for j, (sample, y) in enumerate(zip(data, target)):
